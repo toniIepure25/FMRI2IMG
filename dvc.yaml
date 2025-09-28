@@ -1,0 +1,20 @@
+stages:
+  prepare_data:
+    cmd: python -m fmri2image.data.download_nsd --raw_root data/raw
+    deps:
+      - src/fmri2image/data/download_nsd.py
+      - configs/paths/paths.yaml
+    outs:
+      - data/raw/nsd:
+          persist: true
+
+  baseline_train:
+    cmd: python -m fmri2image.cli +run.name=baseline_train train=baseline
+    deps:
+      - src/fmri2image/pipelines/baseline_train.py
+      - src/fmri2image/models/encoders/mlp_encoder.py
+      - src/fmri2image/data/nsd_reader.py
+      - configs/train/baseline.yaml
+      - configs/config.yaml
+    outs:
+      - outputs
