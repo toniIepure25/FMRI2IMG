@@ -1,0 +1,14 @@
+defaults:
+  - paths: paths
+  - data: nsd
+  - train: baseline
+  - eval: default
+  - wandb: wandb
+  - _self_
+
+seed: 1337
+device: cuda
+
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
