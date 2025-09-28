@@ -9,7 +9,7 @@ stages:
           persist: true
 
   baseline_train:
-    cmd: python -m fmri2image.cli +run.name=baseline_train train=baseline
+    cmd: python -m fmri2image.cli ++run.name=baseline_train train=baseline
     deps:
       - src/fmri2image/pipelines/baseline_train.py
       - src/fmri2image/models/encoders/mlp_encoder.py
