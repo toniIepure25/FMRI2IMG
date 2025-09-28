@@ -69,3 +69,20 @@ stages:
       md5: b114b4dbddd4b453946cb1a555809659.dir
       size: 983168
       nfiles: 1
+  clip_text:
+    cmd: "python -m fmri2image.text.clip_text --captions data/raw/nsd/captions.csv
+      --out data/processed/nsd/clip_text.npy\n"
+    deps:
+    - path: data/raw/nsd/captions.csv
+      hash: md5
+      md5: 2cfdc695fc4d02a0aef4e9c1185bf1ae
+      size: 65
+    - path: src/fmri2image/text/clip_text.py
+      hash: md5
+      md5: 6a157c4ab11fcd3922ff2414e344cc67
+      size: 1277
+    outs:
+    - path: data/processed/nsd/clip_text.npy
+      hash: md5
+      md5: 2577ce444d57eb6c9b162b4a4c8b09f4
+      size: 6272
