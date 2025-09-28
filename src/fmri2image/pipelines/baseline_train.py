@@ -1,4 +1,5 @@
 from omegaconf import DictConfig
+import numpy as np
 import torch
 import pytorch_lightning as pl
 import torch.nn as nn
@@ -29,6 +30,33 @@ class LitModule(pl.LightningModule):
 
     def configure_optimizers(self):
         return optim.Adam(self.parameters(), lr=self.hparams["cfg"].train.optimizer.lr)
+
+class CosineAlignLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.cos = nn.CosineSimilarity(dim=-1)
+    def forward(self, latent, text_emb_batch):
+        latent = latent / (latent.norm(dim=-1, keepdim=True) + 1e-8)
+        loss = 1.0 - self.cos(latent, text_emb_batch).mean()
+        return loss
+
+class LitModule(pl.LightningModule):
+    def __init__(self, cfg: DictConfig, clip_text_feats: np.ndarray):
+        super().__init__()
+        m = cfg.train.model
+        # project to CLIP text dim
+        self.encoder = FMRIEncoderMLP(m.fmri_input_dim, clip_text_feats.shape[1], m.hidden)
+        self.criterion = CosineAlignLoss()
+        self.clip_text_feats = torch.tensor(clip_text_feats, dtype=torch.float32)
+        self.save_hyperparameters()
+
+    def training_step(self, batch, _):
+        x, (idx, _texts) = batch
+        z = self.encoder(x)
+        text_emb = self.clip_text_feats[idx].to(z.device)  # align with correct caption
+        loss = self.criterion(z, text_emb)
+        self.log("train/loss", loss)
+        return loss
 
 def run_baseline(cfg: DictConfig):
     reader = NSDReader(

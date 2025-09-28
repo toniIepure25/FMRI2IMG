@@ -24,6 +24,7 @@ Requires-Dist: xarray>=2024.6
 Requires-Dist: nibabel>=5.2
 Requires-Dist: nilearn>=0.10
 Requires-Dist: h5py>=3.11
+Requires-Dist: open_clip_torch>=2.24.0
 
 # fmri2image
 

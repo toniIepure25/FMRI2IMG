@@ -28,21 +28,44 @@ stages:
       hash: md5
       md5: 9801b9aeb6861586cf203650fc772a9e
       size: 231
+    - path: data/processed/nsd/roi/subj01_roi.npy
+      hash: md5
+      md5: 47c9fb596d852b19d0a97abc4504a6ae
+      size: 983168
     - path: src/fmri2image/data/nsd_reader.py
       hash: md5
-      md5: 084b9346dbc48b5ea6774ba4df7d14b9
-      size: 726
+      md5: 36d85d4ecab163fa022f4e5388d56dda
+      size: 1110
     - path: src/fmri2image/models/encoders/mlp_encoder.py
       hash: md5
       md5: 66e2f739ca3c679e83a79332265da2fa
       size: 448
     - path: src/fmri2image/pipelines/baseline_train.py
       hash: md5
-      md5: 83027afa14883e30166df53415571080
-      size: 1646
+      md5: b00bd1875f518ced43fed7d8f9371021
+      size: 1784
     outs:
     - path: outputs
       hash: md5
-      md5: 37f1c8f38e0280f7823b6dcf612120e5.dir
-      size: 5310
+      md5: 6667798a2b9efe620802db99d520b5bf.dir
+      size: 5854
       nfiles: 4
+  roi_extract:
+    cmd: "python -m fmri2image.data.extract_roi --fmriprep_dir data/processed/nsd/fmriprep
+      --out_dir data/processed/nsd/roi --mode atlas --atlas glasser --vector_dim 2048
+      --subject subj01\n"
+    deps:
+    - path: configs/data/nsd.yaml
+      hash: md5
+      md5: aa0676ebabf3bfd4721381d7f051c949
+      size: 589
+    - path: src/fmri2image/data/extract_roi.py
+      hash: md5
+      md5: 972f9e67547e89b6abb352e69d6ff970
+      size: 1133
+    outs:
+    - path: data/processed/nsd/roi
+      hash: md5
+      md5: b114b4dbddd4b453946cb1a555809659.dir
+      size: 983168
+      nfiles: 1

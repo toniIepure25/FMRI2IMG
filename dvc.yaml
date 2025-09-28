@@ -24,6 +24,18 @@ stages:
       - data/processed/nsd/roi:
           persist: true
 
+  clip_text:
+    cmd: >
+      python -m fmri2image.text.clip_text
+      --captions data/raw/nsd/captions.csv
+      --out data/processed/nsd/clip_text.npy
+    deps:
+      - src/fmri2image/text/clip_text.py
+      - data/raw/nsd/captions.csv
+    outs:
+      - data/processed/nsd/clip_text.npy:
+          persist: true
+
   baseline_train:
     cmd: python -m fmri2image.cli ++run.name=baseline_train train=baseline
     deps:
@@ -33,5 +45,6 @@ stages:
       - configs/train/baseline.yaml
       - configs/config.yaml
       - data/processed/nsd/roi/subj01_roi.npy
+      - data/processed/nsd/clip_text.npy
     outs:
       - outputs

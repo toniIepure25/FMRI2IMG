@@ -8,6 +8,8 @@ src/fmri2image.egg-info/dependency_links.txt
 src/fmri2image.egg-info/requires.txt
 src/fmri2image.egg-info/top_level.txt
 src/fmri2image/data/datamodule.py
+src/fmri2image/data/download_nsd.py
+src/fmri2image/data/extract_roi.py
 src/fmri2image/data/nsd_reader.py
 src/fmri2image/models/encoders/mlp_encoder.py
 src/fmri2image/pipelines/baseline_train.py

@@ -6,9 +6,8 @@ class FMRITextDataset(Dataset):
         self.X, self.texts = X, texts
     def __len__(self): return len(self.texts)
     def __getitem__(self, idx):
-        return torch.tensor(self.X[idx]), self.texts[idx]
+        return torch.tensor(self.X[idx]), (torch.tensor(idx, dtype=torch.long), self.texts[idx])
 
 def make_loaders(X, texts, batch_size=2, num_workers=0):
     ds = FMRITextDataset(X, texts)
-    dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    return dl
+    return DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)

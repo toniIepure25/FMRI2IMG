@@ -29,6 +29,7 @@ dependencies = [
   "nibabel>=5.2",
   "nilearn>=0.10",
   "h5py>=3.11",
+  "open_clip_torch>=2.24.0",
 ]
 
 [tool.ruff]
