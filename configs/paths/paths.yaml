@@ -1,0 +1,4 @@
+data_dir: ${oc.env:DATA_DIR, ./data}
+raw_dir: ${paths.data_dir}/raw
+proc_dir: ${paths.data_dir}/processed
+artifacts_dir: ${paths.data_dir}/artifacts

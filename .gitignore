@@ -15,3 +15,7 @@ data/*
 wandb/
 outputs/
 dist/
+
+# allow Hydra configs
+!configs/
+!configs/**
