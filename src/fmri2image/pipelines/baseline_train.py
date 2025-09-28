@@ -23,13 +23,17 @@ class LitModule(pl.LightningModule):
         # project fmri -> CLIP text dim
         self.encoder = FMRIEncoderMLP(m.fmri_input_dim, clip_text_feats.shape[1], m.hidden)
         self.criterion = CosineAlignLoss()
-        self.clip_text_feats = torch.tensor(clip_text_feats, dtype=torch.float32)
+        self.register_buffer(
+            "clip_text_feats",
+            torch.tensor(clip_text_feats, dtype=torch.float32),
+            persistent=False,
+        )
         self.save_hyperparameters()
 
     def training_step(self, batch, _):
         x, (idx, _texts) = batch            # <— get index from dataset
         z = self.encoder(x)
-        text_emb = self.clip_text_feats[idx].to(z.device)  # align with correct caption
+        text_emb = self.clip_text_feats.index_select(0, idx)  # same device as model
         loss = self.criterion(z, text_emb)
         self.log("train/loss", loss)
         return loss
