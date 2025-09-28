@@ -1,0 +1,4 @@
+enabled: true
+project: ${oc.env:WANDB_PROJECT, fmri2image}
+entity: ${oc.env:WANDB_ENTITY, null}
+mode: online

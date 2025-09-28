@@ -1,0 +1,43 @@
+Metadata-Version: 2.4
+Name: fmri2image
+Version: 0.1.0
+Summary: fMRI→Image reconstruction pipeline (Hydra, DVC, Lightning, W&B)
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.3
+Requires-Dist: pytorch-lightning>=2.4
+Requires-Dist: hydra-core>=1.3
+Requires-Dist: omegaconf>=2.3
+Requires-Dist: dvc[s3]>=3.50
+Requires-Dist: numpy>=1.26
+Requires-Dist: pandas>=2.2
+Requires-Dist: scikit-learn>=1.5
+Requires-Dist: einops>=0.8
+Requires-Dist: tqdm>=4.66
+Requires-Dist: wandb>=0.17
+Requires-Dist: rich>=13.7
+Requires-Dist: pytest>=8.3
+Requires-Dist: pytest-cov>=5.0
+Requires-Dist: mypy>=1.11
+Requires-Dist: ruff>=0.6
+Requires-Dist: xarray>=2024.6
+Requires-Dist: nibabel>=5.2
+Requires-Dist: nilearn>=0.10
+Requires-Dist: h5py>=3.11
+
+# fmri2image
+
+Industrial-grade scaffold (Hydra + DVC + Docker + CI + tests) pentru reconstrucție fMRI→Imagine.
+
+## Setup rapid
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -U pip && pip install -e .
+pre-commit install
+cp .env.example .env
+export DATA_DIR=$(pwd)/data
+make dvc-init
+pytest -q
+python -m fmri2image.cli
+```

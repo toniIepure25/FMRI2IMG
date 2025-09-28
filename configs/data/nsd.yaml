@@ -1,0 +1,10 @@
+name: nsd
+# Pointers; pentru început folosim mock-uri / fișiere mici
+subjects: [subj01]
+split:
+  train_ratio: 0.9
+  seed: 42
+paths:
+  images_root: ${paths.raw_dir}/nsd/images
+  fmri_root: ${paths.raw_dir}/nsd/fmri
+  captions: ${paths.raw_dir}/nsd/captions.csv

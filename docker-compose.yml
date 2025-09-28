@@ -1,0 +1,16 @@
+services:
+  dev:
+    build: .
+    image: fmri2image:dev
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    environment:
+      - WANDB_PROJECT
+      - WANDB_ENTITY
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]

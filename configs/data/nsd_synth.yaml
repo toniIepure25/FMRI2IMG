@@ -1,0 +1,4 @@
+name: nsd_synth
+paths:
+  images_root: ${paths.raw_dir}/nsd_synth/images
+  fmri_root: ${paths.raw_dir}/nsd_synth/fmri
