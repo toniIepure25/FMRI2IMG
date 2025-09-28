@@ -1,0 +1,48 @@
+schema: '2.0'
+stages:
+  prepare_data:
+    cmd: python -m fmri2image.data.download_nsd --raw_root data/raw
+    deps:
+    - path: configs/paths/paths.yaml
+      hash: md5
+      md5: 8f28bb84db3bdc7a4e9ff462057c7078
+      size: 149
+    - path: src/fmri2image/data/download_nsd.py
+      hash: md5
+      md5: abd4099492831141fa689f051c584af9
+      size: 920
+    outs:
+    - path: data/raw/nsd
+      hash: md5
+      md5: 79a62e2ffa10ebce2562583f42158d68.dir
+      size: 219
+      nfiles: 2
+  baseline_train:
+    cmd: python -m fmri2image.cli ++run.name=baseline_train train=baseline
+    deps:
+    - path: configs/config.yaml
+      hash: md5
+      md5: c341062c96b325785ce81f82fb812de0
+      size: 211
+    - path: configs/train/baseline.yaml
+      hash: md5
+      md5: 9801b9aeb6861586cf203650fc772a9e
+      size: 231
+    - path: src/fmri2image/data/nsd_reader.py
+      hash: md5
+      md5: 084b9346dbc48b5ea6774ba4df7d14b9
+      size: 726
+    - path: src/fmri2image/models/encoders/mlp_encoder.py
+      hash: md5
+      md5: 66e2f739ca3c679e83a79332265da2fa
+      size: 448
+    - path: src/fmri2image/pipelines/baseline_train.py
+      hash: md5
+      md5: 83027afa14883e30166df53415571080
+      size: 1646
+    outs:
+    - path: outputs
+      hash: md5
+      md5: 37f1c8f38e0280f7823b6dcf612120e5.dir
+      size: 5310
+      nfiles: 4

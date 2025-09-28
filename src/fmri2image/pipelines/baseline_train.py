@@ -35,6 +35,8 @@ def run_baseline(cfg: DictConfig):
         cfg.data.paths.images_root,
         cfg.data.paths.fmri_root,
         cfg.data.paths.captions,
+        roi_dir=cfg.data.roi.out_dir,
+        subject=cfg.data.subjects[0] if "subjects" in cfg.data and cfg.data.subjects else "subj01",
     )
     X, texts = reader.load(n=64, fmri_dim=cfg.train.model.fmri_input_dim)
     dl = make_loaders(X, texts, cfg.train.batch_size, cfg.train.num_workers)

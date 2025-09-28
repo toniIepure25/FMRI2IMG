@@ -8,6 +8,22 @@ stages:
       - data/raw/nsd:
           persist: true
 
+  roi_extract:
+    cmd: >
+      python -m fmri2image.data.extract_roi
+      --fmriprep_dir data/processed/nsd/fmriprep
+      --out_dir data/processed/nsd/roi
+      --mode atlas
+      --atlas glasser
+      --vector_dim 2048
+      --subject subj01
+    deps:
+      - src/fmri2image/data/extract_roi.py
+      - configs/data/nsd.yaml
+    outs:
+      - data/processed/nsd/roi:
+          persist: true
+
   baseline_train:
     cmd: python -m fmri2image.cli ++run.name=baseline_train train=baseline
     deps:
@@ -16,5 +32,6 @@ stages:
       - src/fmri2image/data/nsd_reader.py
       - configs/train/baseline.yaml
       - configs/config.yaml
+      - data/processed/nsd/roi/subj01_roi.npy
     outs:
       - outputs

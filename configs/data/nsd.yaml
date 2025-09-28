@@ -8,3 +8,14 @@ paths:
   images_root: ${paths.raw_dir}/nsd/images
   fmri_root: ${paths.raw_dir}/nsd/fmri
   captions: ${paths.raw_dir}/nsd/captions.csv
+
+fmriprep:
+  bids_root: ${paths.raw_dir}/nsd/bids
+  out_root: ${paths.proc_dir}/nsd/fmriprep
+  fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+
+roi:
+  mode: "atlas" # "atlas" | "mask" | "whole_brain"
+  atlas: "glasser" # ex: glasser / wang / schaefer
+  vector_dim: 2048
+  out_dir: ${paths.proc_dir}/nsd/roi

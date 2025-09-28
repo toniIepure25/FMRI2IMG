@@ -19,3 +19,4 @@ dist/
 # allow Hydra configs
 !configs/
 !configs/**
+/outputs
