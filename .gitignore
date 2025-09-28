@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Data files
+data/*
+!data/*.dvc
+!data/**/*.dvc
+!data/.gitkeep
+!data/README.md
+
+.dvc/tmp/
+.dvc/cache/
+wandb/
+outputs/
+dist/
