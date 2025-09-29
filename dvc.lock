@@ -46,12 +46,12 @@ stages:
       size: 448
     - path: src/fmri2image/pipelines/baseline_train.py
       hash: md5
-      md5: 2bc217f4c92247f206831d0203181cdf
-      size: 6184
+      md5: 44dd1a3fdeef88fb8b9155483e7cc167
+      size: 6240
     outs:
     - path: outputs
       hash: md5
-      md5: fdc9cab183abf9a24e255960effbc07f.dir
+      md5: ceca2a359232b632d1d409d728ab4dec.dir
       size: 6078
       nfiles: 4
   roi_extract:

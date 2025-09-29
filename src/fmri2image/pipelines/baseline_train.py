@@ -6,9 +6,58 @@ import torch.optim as optim
 import pytorch_lightning as pl
 
 from ..models.encoders.mlp_encoder import FMRIEncoderMLP
+from ..models.encoders.vit3d_encoder import ViT3DEncoderLite
+from ..models.encoders.gnn_encoder import GraphMLPEncoderLite
+
 from ..data.nsd_reader import NSDReader
 from ..data.datamodule import make_loaders
 from .metrics import topk_retrieval
+
+
+def build_encoder(cfg: DictConfig, out_dim: int) -> nn.Module:
+    """
+    Select and construct the encoder according to cfg.train.encoder.
+    Supported: 'mlp' (default), 'vit3d', 'gnn'.
+    """
+    enc_type = str(getattr(cfg.train, "encoder", "mlp")).lower()
+    m = cfg.train.model
+
+    if enc_type == "mlp":
+        return FMRIEncoderMLP(m.fmri_input_dim, out_dim, m.hidden)
+
+    elif enc_type == "vit3d":
+        v = cfg.train.vit3d
+        # NOTE: ViT3D-lite expects fmri_input_dim % time_steps == 0
+        return ViT3DEncoderLite(
+            in_dim=m.fmri_input_dim,
+            out_dim=out_dim,
+            time_steps=int(getattr(v, "time_steps", 8)),
+            depth=int(getattr(v, "depth", 2)),
+            heads=int(getattr(v, "heads", 4)),
+            mlp_ratio=float(getattr(v, "mlp_ratio", 2.0)),
+            dropout=float(getattr(v, "dropout", 0.1)),
+        )
+
+    elif enc_type == "gnn":
+        g = cfg.train.gnn
+        enc = GraphMLPEncoderLite(
+            in_dim=m.fmri_input_dim,
+            out_dim=out_dim,
+            hidden=m.hidden,
+            dropout=float(getattr(g, "dropout", 0.1)),
+        )
+        # Mock adjacency: identity (no edges) unless you switch to another scheme
+        use_identity = bool(getattr(g, "use_identity_adj", True))
+        if use_identity:
+            A = torch.zeros(m.fmri_input_dim, m.fmri_input_dim)
+        else:
+            # simple example: self-loops (you can customize later)
+            A = torch.eye(m.fmri_input_dim, m.fmri_input_dim)
+        enc.set_adj(A)
+        return enc
+
+    else:
+        raise ValueError(f"Unknown encoder type: {enc_type}")
 
 
 class ClipStyleContrastiveLoss(nn.Module):
@@ -66,7 +115,7 @@ class LitModule(pl.LightningModule):
 
         # Project fMRI -> CLIP text embedding dimension
         out_dim = int(clip_text_feats.shape[1])
-        self.encoder = FMRIEncoderMLP(m.fmri_input_dim, out_dim, m.hidden)
+        self.encoder = build_encoder(cfg, out_dim)
 
         self.criterion = ClipStyleContrastiveLoss(
             temperature_init=float(cfg.train.loss.temperature_init),
@@ -94,22 +143,24 @@ class LitModule(pl.LightningModule):
 
         out = self.criterion(z, t)
 
+        # --- Logging with explicit batch_size (fixes PL warning) ---
         bs = x.size(0)
         self.log("train/loss", out["loss"], prog_bar=True, on_step=True, on_epoch=True, batch_size=bs)
         self.log("train/temp", out["temp"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
 
-        # Retrieval metrics within-batch (ranking unaffected by temperature)
+        # --- Retrieval metrics within-batch (ranking unaffected by temperature) ---
         with torch.no_grad():
-            sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)  # remove scale
+            # remove temperature for ranking
+            sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)
             m_zt = topk_retrieval(sim_zt, self.topk)
             for k, v in m_zt.items():
-                self.log(f"train/retrieval_zt_{k}", v, prog_bar=True, on_step=False, on_epoch=True)
+                self.log(f"train/retrieval_zt_{k}", v, prog_bar=True, on_step=False, on_epoch=True, batch_size=bs)
 
             if out["logits_tz"] is not None:
                 sim_tz = out["logits_tz"] / torch.exp(self.criterion.logit_scale)
                 m_tz = topk_retrieval(sim_tz, self.topk)
                 for k, v in m_tz.items():
-                    self.log(f"train/retrieval_tz_{k}", v, prog_bar=False, on_step=False, on_epoch=True)        
+                    self.log(f"train/retrieval_tz_{k}", v, prog_bar=False, on_step=False, on_epoch=True, batch_size=bs)
 
         return out["loss"]
 
@@ -137,7 +188,7 @@ def run_baseline(cfg: DictConfig):
     dl = make_loaders(X, texts, cfg.train.batch_size, cfg.train.num_workers)
     model = LitModule(cfg, clip_feats)
 
-    # Optional: W&B logger (safe fallback to no-logger)
+    # Optional: logger (W&B disabled by default in your config)
     logger = False
     try:
         if getattr(cfg.wandb, "enabled", False):

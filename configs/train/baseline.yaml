@@ -2,15 +2,33 @@ max_epochs: 1
 batch_size: 2
 num_workers: 4
 precision: 32
+
 optimizer:
   lr: 1e-3
+
 model:
   fmri_input_dim: 2048 # placeholder ROI vectorizat
   latent_dim: 768 # țintă CLIP text/image latent (placeholder)
   hidden: [2048, 1024, 768]
+
 loss:
   type: "contrastive" # "contrastive" | "cosine"
   temperature_init: 0.07 # initial temperature for InfoNCE (CLIP-style)
   symmetric: true # use both fMRI->text and text->fMRI
+
 eval:
   topk: [1, 5]
+
+encoder: mlp # mlp | vit3d | gnn
+
+gnn:
+  use_identity_adj: true # dacă nu ai încă un A ROI disponibil
+  dropout: 0.1
+
+vit3d:
+  time_steps: 8 # număr de “ferestre” temporale simulate (mock)
+  patch: 1 # granularitate pe timp (mock)
+  depth: 2
+  heads: 4
+  mlp_ratio: 2.0
+  dropout: 0.1
