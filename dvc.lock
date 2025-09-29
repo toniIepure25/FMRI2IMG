@@ -28,6 +28,10 @@ stages:
       hash: md5
       md5: 9801b9aeb6861586cf203650fc772a9e
       size: 231
+    - path: data/processed/nsd/clip_text.npy
+      hash: md5
+      md5: 2577ce444d57eb6c9b162b4a4c8b09f4
+      size: 6272
     - path: data/processed/nsd/roi/subj01_roi.npy
       hash: md5
       md5: 47c9fb596d852b19d0a97abc4504a6ae
@@ -42,12 +46,12 @@ stages:
       size: 448
     - path: src/fmri2image/pipelines/baseline_train.py
       hash: md5
-      md5: b00bd1875f518ced43fed7d8f9371021
-      size: 1784
+      md5: 960ca40fa77c97e107130f93cb1fe5a5
+      size: 2646
     outs:
     - path: outputs
       hash: md5
-      md5: 6667798a2b9efe620802db99d520b5bf.dir
+      md5: f3af829ab32b932a4b609de1671d9486.dir
       size: 5854
       nfiles: 4
   roi_extract:
