@@ -1,4 +1,5 @@
 from omegaconf import DictConfig
+import os
 import numpy as np
 import torch
 import torch.nn as nn
@@ -9,8 +10,11 @@ from ..models.encoders.mlp_encoder import FMRIEncoderMLP
 from ..models.encoders.vit3d_encoder import ViT3DEncoderLite
 from ..models.encoders.gnn_encoder import GraphMLPEncoderLite
 
+from ..losses.cca import DeepCCALoss
+
 from ..data.nsd_reader import NSDReader
 from ..data.datamodule import make_loaders
+
 from .metrics import topk_retrieval
 
 
@@ -111,16 +115,30 @@ class LitModule(pl.LightningModule):
     def __init__(self, cfg: DictConfig, clip_text_feats: np.ndarray):
         super().__init__()
         self.cfg = cfg
-        m = cfg.train.model
 
         # Project fMRI -> CLIP text embedding dimension
         out_dim = int(clip_text_feats.shape[1])
         self.encoder = build_encoder(cfg, out_dim)
 
+        # Contrastive loss
         self.criterion = ClipStyleContrastiveLoss(
             temperature_init=float(cfg.train.loss.temperature_init),
             symmetric=bool(cfg.train.loss.get("symmetric", True)),
         )
+
+        # Optional Deep CCA
+        cca_cfg = getattr(getattr(cfg, "train", {}), "cca", {})
+        self.use_cca = bool(getattr(cca_cfg, "enabled", False))
+        if self.use_cca:
+            cca_out_dim = int(getattr(cca_cfg, "proj_dim", 128))
+            self.cca = DeepCCALoss(in_dim=out_dim, out_dim=cca_out_dim)
+        else:
+            self.cca = None
+
+        # loss weights
+        w = getattr(cfg.train.loss, "weights", {})
+        self.w_contrast = float(w.get("contrastive", 1.0))
+        self.w_cca = float(w.get("cca", 0.0))
 
         # Register CLIP text features as a non-persistent buffer (moved with device)
         self.register_buffer(
@@ -141,12 +159,24 @@ class LitModule(pl.LightningModule):
         z = self.encoder(x)                      # [B, D]
         t = self.clip_text_feats.index_select(0, idx.long())  # [B, D] on correct device
 
+        # --- Contrastive ---
         out = self.criterion(z, t)
+        loss_total = self.w_contrast * out["loss"]
 
-        # --- Logging with explicit batch_size (fixes PL warning) ---
+        # --- Optional Deep CCA (auxiliary) ---
+        if self.use_cca and self.w_cca > 0:
+            cca_out = self.cca(z.detach(), t.detach())  # keep it auxiliary; no grad through encoder
+            loss_total = loss_total + self.w_cca * cca_out["loss"]
+        else:
+            cca_out = None
+
+        # --- Logging with explicit batch_size ---
         bs = x.size(0)
-        self.log("train/loss", out["loss"], prog_bar=True, on_step=True, on_epoch=True, batch_size=bs)
+        self.log("train/loss", loss_total, prog_bar=True, on_step=True, on_epoch=True, batch_size=bs)
+        self.log("train/loss_contrast", out["loss"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
         self.log("train/temp", out["temp"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
+        if cca_out is not None:
+            self.log("train/cca_corr", cca_out["corr_sum"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
 
         # --- Retrieval metrics within-batch (ranking unaffected by temperature) ---
         with torch.no_grad():
@@ -162,7 +192,7 @@ class LitModule(pl.LightningModule):
                 for k, v in m_tz.items():
                     self.log(f"train/retrieval_tz_{k}", v, prog_bar=False, on_step=False, on_epoch=True, batch_size=bs)
 
-        return out["loss"]
+        return loss_total
 
     def configure_optimizers(self):
         return optim.Adam(self.parameters(), lr=float(self.cfg.train.optimizer.lr))
@@ -187,6 +217,15 @@ def run_baseline(cfg: DictConfig):
 
     dl = make_loaders(X, texts, cfg.train.batch_size, cfg.train.num_workers)
     model = LitModule(cfg, clip_feats)
+
+    # Optionally load self-supervised pretrained encoder weights
+    pre_ckpt = getattr(getattr(cfg.train, "pretrained", {}), "path", None)
+    if pre_ckpt and os.path.exists(pre_ckpt):
+        ckpt = torch.load(pre_ckpt, map_location="cpu")
+        enc_state = ckpt.get("state_dict", ckpt)
+        missing, unexpected = model.encoder.load_state_dict(enc_state, strict=False)
+        print(f"[pretrain] loaded encoder weights from {pre_ckpt} "
+              f"(missing={len(missing)}, unexpected={len(unexpected)})")
 
     # Optional: logger (W&B disabled by default in your config)
     logger = False

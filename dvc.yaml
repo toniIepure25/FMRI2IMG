@@ -48,3 +48,25 @@ stages:
       - data/processed/nsd/clip_text.npy
     outs:
       - outputs
+
+  pretrain_encoder:
+    cmd: >
+      python -m fmri2image.selfsupervised.pretrain_fmri
+      --images_root data/raw/nsd/images
+      --fmri_root data/raw/nsd/fmri
+      --captions data/raw/nsd/captions.csv
+      --roi_dir data/processed/nsd/roi
+      --subject subj01
+      --dim 2048
+      --mask_ratio 0.5
+      --lr 1e-3
+      --epochs 2
+      --batch_size 16
+      --num_workers 4
+      --out_ckpt data/artifacts/encoder_pretrained.ckpt
+    deps:
+      - src/fmri2image/selfsupervised/pretrain_fmri.py
+      - src/fmri2image/data/nsd_reader.py
+      - data/processed/nsd/roi/subj01_roi.npy
+    outs:
+      - data/artifacts/encoder_pretrained.ckpt

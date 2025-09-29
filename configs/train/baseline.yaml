@@ -15,7 +15,9 @@ loss:
   type: "contrastive" # "contrastive" | "cosine"
   temperature_init: 0.07 # initial temperature for InfoNCE (CLIP-style)
   symmetric: true # use both fMRI->text and text->fMRI
-
+  weights:
+    contrastive: 1.0
+    cca: 0.1 # set 0.0 to disable contribution
 eval:
   topk: [1, 5]
 
@@ -32,3 +34,10 @@ vit3d:
   heads: 4
   mlp_ratio: 2.0
   dropout: 0.1
+
+cca:
+  enabled: true
+  proj_dim: 128
+
+pretrained:
+  path: data/artifacts/encoder_pretrained.ckpt # leave empty to skip

@@ -244,6 +244,173 @@ hydra:
 
 ```
 
+# .dvc/cache/files/md5/7d/18581bb9713d9ce2e02effda2a1ded
+
+```
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=baseline_train
+    - train=baseline
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=baseline_train,train=baseline
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-09-29/22-39-01
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
 # .dvc/cache/files/md5/11/290f9045b213fc093bcd600306a7e0
 
 ```
@@ -558,6 +725,173 @@ run:
 
 ```
 
+# .dvc/cache/files/md5/72/7145e6dffb6fe0ee0aa77472970cc9
+
+```
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=baseline_train
+    - train=baseline
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=baseline_train,train=baseline
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-09-29/22-28-31
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
 # .dvc/cache/files/md5/73/bc718bee9b637ae12f8173a862007a
 
 ```
@@ -745,6 +1079,76 @@ hydra:
 [{"md5": "47c9fb596d852b19d0a97abc4504a6ae", "relpath": "subj01_roi.npy"}]
 ```
 
+# .dvc/cache/files/md5/b4/bb677d069190e8e3fafc8dc7bbaf09
+
+```
+[2025-09-29 22:39:01,379][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+  eval:
+    topk:
+    - 1
+    - 5
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_train
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
 # .dvc/cache/files/md5/bf/c2985bdddc338a605bfd927bf16943
 
 ```
@@ -807,10 +1211,154 @@ run:
 
 ```
 
+# .dvc/cache/files/md5/ce/ca2a359232b632d1d409d728ab4dec.dir
+
+```dir
+[{"md5": "d6b9288dce117311870f6a104fa9a647", "relpath": "2025-09-29/22-39-01/.hydra/config.yaml"}, {"md5": "7d18581bb9713d9ce2e02effda2a1ded", "relpath": "2025-09-29/22-39-01/.hydra/hydra.yaml"}, {"md5": "73bc718bee9b637ae12f8173a862007a", "relpath": "2025-09-29/22-39-01/.hydra/overrides.yaml"}, {"md5": "b4bb677d069190e8e3fafc8dc7bbaf09", "relpath": "2025-09-29/22-39-01/cli.log"}]
+```
+
+# .dvc/cache/files/md5/d6/b9288dce117311870f6a104fa9a647
+
+```
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+  eval:
+    topk:
+    - 1
+    - 5
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_train
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
 # .dvc/cache/files/md5/d7/51713988987e9331980363e24189ce.dir
 
 ```dir
 []
+```
+
+# .dvc/cache/files/md5/e5/50133fa3ffe3a43dfdea89869a2362
+
+```
+[2025-09-29 22:28:31,435][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+  eval:
+    topk:
+    - 1
+    - 5
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_train
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
 ```
 
 # .dvc/cache/files/md5/f3/af829ab32b932a4b609de1671d9486.dir
@@ -869,6 +1417,96 @@ run:
   name: baseline_train
   output_dir: outputs/${now:%Y-%m-%d}/${run.name}
 
+
+```
+
+# .dvc/cache/files/md5/fd/c9cab183abf9a24e255960effbc07f.dir
+
+```dir
+[{"md5": "d6b9288dce117311870f6a104fa9a647", "relpath": "2025-09-29/22-28-31/.hydra/config.yaml"}, {"md5": "727145e6dffb6fe0ee0aa77472970cc9", "relpath": "2025-09-29/22-28-31/.hydra/hydra.yaml"}, {"md5": "73bc718bee9b637ae12f8173a862007a", "relpath": "2025-09-29/22-28-31/.hydra/overrides.yaml"}, {"md5": "e550133fa3ffe3a43dfdea89869a2362", "relpath": "2025-09-29/22-28-31/cli.log"}]
+```
+
+# .dvc/cache/runs/6e/6e42d1946eaf8c129e702e2f02fc7926d5e03b7e81e6ed82eba51427d753e777/8b3d1895bd249bed8e46e67446db0e61b357d3187a0a76a25ef3af5cb18930c6
+
+```
+cmd: python -m fmri2image.cli ++run.name=baseline_train train=baseline
+deps:
+- path: configs/config.yaml
+  hash: md5
+  md5: c341062c96b325785ce81f82fb812de0
+  size: 211
+- path: configs/train/baseline.yaml
+  hash: md5
+  md5: 9005825d02ef13afb05055f967f6268f
+  size: 434
+- path: data/processed/nsd/clip_text.npy
+  hash: md5
+  md5: 2577ce444d57eb6c9b162b4a4c8b09f4
+  size: 6272
+- path: data/processed/nsd/roi/subj01_roi.npy
+  hash: md5
+  md5: 47c9fb596d852b19d0a97abc4504a6ae
+  size: 983168
+- path: src/fmri2image/data/nsd_reader.py
+  hash: md5
+  md5: 36d85d4ecab163fa022f4e5388d56dda
+  size: 1110
+- path: src/fmri2image/models/encoders/mlp_encoder.py
+  hash: md5
+  md5: 66e2f739ca3c679e83a79332265da2fa
+  size: 448
+- path: src/fmri2image/pipelines/baseline_train.py
+  hash: md5
+  md5: 2bc217f4c92247f206831d0203181cdf
+  size: 6184
+outs:
+- path: outputs
+  hash: md5
+  md5: fdc9cab183abf9a24e255960effbc07f.dir
+  size: 6078
+  nfiles: 4
+
+```
+
+# .dvc/cache/runs/65/658fc4fe42d725c3c04d43b65752116642356a7f23ff0f31c6a447223436e284/d23d21a70bcb90761ce5539b67517bf445f9517fdb6b63a35ccfbed5ea489042
+
+```
+cmd: python -m fmri2image.cli ++run.name=baseline_train train=baseline
+deps:
+- path: configs/config.yaml
+  hash: md5
+  md5: c341062c96b325785ce81f82fb812de0
+  size: 211
+- path: configs/train/baseline.yaml
+  hash: md5
+  md5: 9005825d02ef13afb05055f967f6268f
+  size: 434
+- path: data/processed/nsd/clip_text.npy
+  hash: md5
+  md5: 2577ce444d57eb6c9b162b4a4c8b09f4
+  size: 6272
+- path: data/processed/nsd/roi/subj01_roi.npy
+  hash: md5
+  md5: 47c9fb596d852b19d0a97abc4504a6ae
+  size: 983168
+- path: src/fmri2image/data/nsd_reader.py
+  hash: md5
+  md5: 36d85d4ecab163fa022f4e5388d56dda
+  size: 1110
+- path: src/fmri2image/models/encoders/mlp_encoder.py
+  hash: md5
+  md5: 66e2f739ca3c679e83a79332265da2fa
+  size: 448
+- path: src/fmri2image/pipelines/baseline_train.py
+  hash: md5
+  md5: 44dd1a3fdeef88fb8b9155483e7cc167
+  size: 6240
+outs:
+- path: outputs
+  hash: md5
+  md5: ceca2a359232b632d1d409d728ab4dec.dir
+  size: 6078
+  nfiles: 4
 
 ```
 
@@ -1256,18 +1894,36 @@ max_epochs: 1
 batch_size: 2
 num_workers: 4
 precision: 32
+
 optimizer:
   lr: 1e-3
+
 model:
   fmri_input_dim: 2048 # placeholder ROI vectorizat
   latent_dim: 768 # țintă CLIP text/image latent (placeholder)
   hidden: [2048, 1024, 768]
+
 loss:
   type: "contrastive" # "contrastive" | "cosine"
   temperature_init: 0.07 # initial temperature for InfoNCE (CLIP-style)
   symmetric: true # use both fMRI->text and text->fMRI
+
 eval:
   topk: [1, 5]
+
+encoder: mlp # mlp | vit3d | gnn
+
+gnn:
+  use_identity_adj: true # dacă nu ai încă un A ROI disponibil
+  dropout: 0.1
+
+vit3d:
+  time_steps: 8 # număr de “ferestre” temporale simulate (mock)
+  patch: 1 # granularitate pe timp (mock)
+  depth: 2
+  heads: 4
+  mlp_ratio: 2.0
+  dropout: 0.1
 
 ```
 
@@ -1294,7 +1950,7 @@ mode: online
 # configs/wandb/wandb.yaml
 
 ```yaml
-enabled: true
+enabled: false # Switch to true to enable Weights & Biases logging
 project: ${oc.env:WANDB_PROJECT, fmri2image}
 entity: ${oc.env:WANDB_ENTITY, null}
 mode: online
@@ -1409,8 +2065,8 @@ stages:
       size: 211
     - path: configs/train/baseline.yaml
       hash: md5
-      md5: 9801b9aeb6861586cf203650fc772a9e
-      size: 231
+      md5: 9005825d02ef13afb05055f967f6268f
+      size: 434
     - path: data/processed/nsd/clip_text.npy
       hash: md5
       md5: 2577ce444d57eb6c9b162b4a4c8b09f4
@@ -1429,13 +2085,13 @@ stages:
       size: 448
     - path: src/fmri2image/pipelines/baseline_train.py
       hash: md5
-      md5: 960ca40fa77c97e107130f93cb1fe5a5
-      size: 2646
+      md5: 44dd1a3fdeef88fb8b9155483e7cc167
+      size: 6240
     outs:
     - path: outputs
       hash: md5
-      md5: f3af829ab32b932a4b609de1671d9486.dir
-      size: 5854
+      md5: ceca2a359232b632d1d409d728ab4dec.dir
+      size: 6078
       nfiles: 4
   roi_extract:
     cmd: "python -m fmri2image.data.extract_roi --fmriprep_dir data/processed/nsd/fmriprep
@@ -1569,7 +2225,7 @@ dvc-track:
 
 ```
 
-# outputs/2025-09-29/22-20-55/.hydra/config.yaml
+# outputs/2025-09-29/22-39-01/.hydra/config.yaml
 
 ```yaml
 paths:
@@ -1625,7 +2281,7 @@ eval:
   - psnr
   - clip_score
 wandb:
-  enabled: true
+  enabled: false
   project: ${oc.env:WANDB_PROJECT, fmri2image}
   entity: ${oc.env:WANDB_ENTITY, null}
   mode: online
@@ -1637,7 +2293,7 @@ run:
 
 ```
 
-# outputs/2025-09-29/22-20-55/.hydra/hydra.yaml
+# outputs/2025-09-29/22-39-01/.hydra/hydra.yaml
 
 ```yaml
 hydra:
@@ -1784,7 +2440,7 @@ hydra:
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-09-29/22-20-55
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-09-29/22-39-01
     choices:
       wandb: wandb
       eval: default
@@ -1804,7 +2460,7 @@ hydra:
 
 ```
 
-# outputs/2025-09-29/22-20-55/.hydra/overrides.yaml
+# outputs/2025-09-29/22-39-01/.hydra/overrides.yaml
 
 ```yaml
 - ++run.name=baseline_train
@@ -1812,10 +2468,10 @@ hydra:
 
 ```
 
-# outputs/2025-09-29/22-20-55/cli.log
+# outputs/2025-09-29/22-39-01/cli.log
 
 ```log
-[2025-09-29 22:20:55,427][__main__][INFO] - Config:
+[2025-09-29 22:39:01,379][__main__][INFO] - Config:
 paths:
   data_dir: ${oc.env:DATA_DIR, ./data}
   raw_dir: ${paths.data_dir}/raw
@@ -1869,7 +2525,7 @@ eval:
   - psnr
   - clip_score
 wandb:
-  enabled: true
+  enabled: false
   project: ${oc.env:WANDB_PROJECT, fmri2image}
   entity: ${oc.env:WANDB_ENTITY, null}
   mode: online
@@ -1877,6 +2533,1005 @@ seed: 1337
 device: cuda
 run:
   name: baseline_train
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-09-29/23-02-58/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-09-29/23-02-58/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - train.encoder=mlp
+  job:
+    name: cli
+    chdir: null
+    override_dirname: train.encoder=mlp
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-09-29/23-02-58
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-09-29/23-02-58/.hydra/overrides.yaml
+
+```yaml
+- train.encoder=mlp
+
+```
+
+# outputs/2025-09-29/23-02-58/cli.log
+
+```log
+[2025-09-29 23:02:58,543][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-09-29/23-03-19/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: vit3d
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-09-29/23-03-19/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - train.encoder=vit3d
+  job:
+    name: cli
+    chdir: null
+    override_dirname: train.encoder=vit3d
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-09-29/23-03-19
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-09-29/23-03-19/.hydra/overrides.yaml
+
+```yaml
+- train.encoder=vit3d
+
+```
+
+# outputs/2025-09-29/23-03-19/cli.log
+
+```log
+[2025-09-29 23:03:19,595][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: vit3d
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-09-29/23-03-39/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: gnn
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-09-29/23-03-39/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - train.encoder=gnn
+  job:
+    name: cli
+    chdir: null
+    override_dirname: train.encoder=gnn
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-09-29/23-03-39
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-09-29/23-03-39/.hydra/overrides.yaml
+
+```yaml
+- train.encoder=gnn
+
+```
+
+# outputs/2025-09-29/23-03-39/cli.log
+
+```log
+[2025-09-29 23:03:39,876][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: gnn
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
   output_dir: outputs/${now:%Y-%m-%d}/${run.name}
 
 
@@ -2219,6 +3874,57 @@ class NSDReader:
 
 ```
 
+# src/fmri2image/models/encoders/gnn_encoder.py
+
+```py
+import torch
+import torch.nn as nn
+
+class GraphMLPEncoderLite(nn.Module):
+    """
+    Minimal graph-like encoder using adjacency via (I + D^{-1/2} A D^{-1/2})
+    applied as a fixed linear propagation step, followed by MLP.
+    Avoids external deps (PyG). Works with ROI vectors shaped [B, D].
+    """
+    def __init__(self, in_dim: int, out_dim: int, hidden: list[int], dropout: float = 0.1):
+        super().__init__()
+        dims = [in_dim] + list(hidden) + [out_dim]
+        layers = []
+        for i in range(len(dims) - 1):
+            layers += [nn.Linear(dims[i], dims[i + 1])]
+            if i < len(dims) - 2:
+                layers += [nn.ReLU(), nn.Dropout(dropout)]
+        self.mlp = nn.Sequential(*layers)
+        self.dropout = nn.Dropout(dropout)
+
+        # adjacency placeholder (registered later via set_adj)
+        self.register_buffer("prop_matrix", None, persistent=False)
+
+    def set_adj(self, adj: torch.Tensor):
+        """
+        adj: [D, D] unweighted/weighted adjacency (0/1 or weights).
+        Builds normalized propagation matrix P = I + D^{-1/2} A D^{-1/2}.
+        """
+        A = adj
+        I = torch.eye(A.size(0), device=A.device, dtype=A.dtype)
+        deg = A.sum(dim=1)
+        deg_inv_sqrt = torch.pow(deg + 1e-6, -0.5)
+        D_inv_sqrt = torch.diag(deg_inv_sqrt)
+        P = I + D_inv_sqrt @ A @ D_inv_sqrt
+        self.prop_matrix = P
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x: [B, D]; apply one graph propagation x' = x P, then MLP.
+        If no adj given, just MLP.
+        """
+        if self.prop_matrix is not None:
+            x = x @ self.prop_matrix
+        x = self.dropout(x)
+        return self.mlp(x)
+
+```
+
 # src/fmri2image/models/encoders/mlp_encoder.py
 
 ```py
@@ -2239,6 +3945,64 @@ class FMRIEncoderMLP(nn.Module):
 
 ```
 
+# src/fmri2image/models/encoders/vit3d_encoder.py
+
+```py
+import torch
+import torch.nn as nn
+
+class ViT3DEncoderLite(nn.Module):
+    """
+    A very small '3D ViT' surrogate for ablations, operating on
+    fMRI ROI vectors by reshaping the feature dim into T x token_dim.
+    In real fMRI 4D you'd feed [B, T, V] or [B, T, H, W, D] tokens.
+    """
+    def __init__(
+        self,
+        in_dim: int,
+        out_dim: int,
+        time_steps: int = 8,
+        depth: int = 2,
+        heads: int = 4,
+        mlp_ratio: float = 2.0,
+        dropout: float = 0.1,
+    ):
+        super().__init__()
+        assert in_dim % time_steps == 0, "in_dim must be divisible by time_steps for the lite reshaping"
+        self.time_steps = int(time_steps)
+        token_dim = in_dim // self.time_steps
+        self.token_proj = nn.Linear(token_dim, token_dim)
+
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=token_dim,
+            nhead=heads,
+            dim_feedforward=int(token_dim * mlp_ratio),
+            dropout=dropout,
+            batch_first=True,
+        )
+        self.backbone = nn.TransformerEncoder(encoder_layer, num_layers=depth)
+        self.head = nn.Sequential(
+            nn.LayerNorm(token_dim),
+            nn.Linear(token_dim, out_dim),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x: [B, in_dim] -> reshape to [B, T, token_dim], run transformer over T,
+        pool (mean) and map to out_dim.
+        """
+        B, D = x.shape
+        T = self.time_steps
+        token_dim = D // T
+        xt = x.view(B, T, token_dim)
+        xt = self.token_proj(xt)
+        xt = self.backbone(xt)   # [B, T, token_dim]
+        xt = xt.mean(dim=1)      # temporal mean pool
+        z = self.head(xt)        # [B, out_dim]
+        return z
+
+```
+
 # src/fmri2image/pipelines/baseline_train.py
 
 ```py
@@ -2250,9 +4014,58 @@ import torch.optim as optim
 import pytorch_lightning as pl
 
 from ..models.encoders.mlp_encoder import FMRIEncoderMLP
+from ..models.encoders.vit3d_encoder import ViT3DEncoderLite
+from ..models.encoders.gnn_encoder import GraphMLPEncoderLite
+
 from ..data.nsd_reader import NSDReader
 from ..data.datamodule import make_loaders
 from .metrics import topk_retrieval
+
+
+def build_encoder(cfg: DictConfig, out_dim: int) -> nn.Module:
+    """
+    Select and construct the encoder according to cfg.train.encoder.
+    Supported: 'mlp' (default), 'vit3d', 'gnn'.
+    """
+    enc_type = str(getattr(cfg.train, "encoder", "mlp")).lower()
+    m = cfg.train.model
+
+    if enc_type == "mlp":
+        return FMRIEncoderMLP(m.fmri_input_dim, out_dim, m.hidden)
+
+    elif enc_type == "vit3d":
+        v = cfg.train.vit3d
+        # NOTE: ViT3D-lite expects fmri_input_dim % time_steps == 0
+        return ViT3DEncoderLite(
+            in_dim=m.fmri_input_dim,
+            out_dim=out_dim,
+            time_steps=int(getattr(v, "time_steps", 8)),
+            depth=int(getattr(v, "depth", 2)),
+            heads=int(getattr(v, "heads", 4)),
+            mlp_ratio=float(getattr(v, "mlp_ratio", 2.0)),
+            dropout=float(getattr(v, "dropout", 0.1)),
+        )
+
+    elif enc_type == "gnn":
+        g = cfg.train.gnn
+        enc = GraphMLPEncoderLite(
+            in_dim=m.fmri_input_dim,
+            out_dim=out_dim,
+            hidden=m.hidden,
+            dropout=float(getattr(g, "dropout", 0.1)),
+        )
+        # Mock adjacency: identity (no edges) unless you switch to another scheme
+        use_identity = bool(getattr(g, "use_identity_adj", True))
+        if use_identity:
+            A = torch.zeros(m.fmri_input_dim, m.fmri_input_dim)
+        else:
+            # simple example: self-loops (you can customize later)
+            A = torch.eye(m.fmri_input_dim, m.fmri_input_dim)
+        enc.set_adj(A)
+        return enc
+
+    else:
+        raise ValueError(f"Unknown encoder type: {enc_type}")
 
 
 class ClipStyleContrastiveLoss(nn.Module):
@@ -2310,7 +4123,7 @@ class LitModule(pl.LightningModule):
 
         # Project fMRI -> CLIP text embedding dimension
         out_dim = int(clip_text_feats.shape[1])
-        self.encoder = FMRIEncoderMLP(m.fmri_input_dim, out_dim, m.hidden)
+        self.encoder = build_encoder(cfg, out_dim)
 
         self.criterion = ClipStyleContrastiveLoss(
             temperature_init=float(cfg.train.loss.temperature_init),
@@ -2337,21 +4150,25 @@ class LitModule(pl.LightningModule):
         t = self.clip_text_feats.index_select(0, idx.long())  # [B, D] on correct device
 
         out = self.criterion(z, t)
-        self.log("train/loss", out["loss"], prog_bar=True, on_step=True, on_epoch=True)
-        self.log("train/temp", out["temp"], prog_bar=False, on_step=True, on_epoch=True)
 
-        # Retrieval metrics within-batch (ranking unaffected by temperature)
+        # --- Logging with explicit batch_size (fixes PL warning) ---
+        bs = x.size(0)
+        self.log("train/loss", out["loss"], prog_bar=True, on_step=True, on_epoch=True, batch_size=bs)
+        self.log("train/temp", out["temp"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
+
+        # --- Retrieval metrics within-batch (ranking unaffected by temperature) ---
         with torch.no_grad():
-            sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)  # remove scale
+            # remove temperature for ranking
+            sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)
             m_zt = topk_retrieval(sim_zt, self.topk)
             for k, v in m_zt.items():
-                self.log(f"train/retrieval_zt_top{k}", v, prog_bar=True, on_step=False, on_epoch=True)
+                self.log(f"train/retrieval_zt_{k}", v, prog_bar=True, on_step=False, on_epoch=True, batch_size=bs)
 
             if out["logits_tz"] is not None:
                 sim_tz = out["logits_tz"] / torch.exp(self.criterion.logit_scale)
                 m_tz = topk_retrieval(sim_tz, self.topk)
                 for k, v in m_tz.items():
-                    self.log(f"train/retrieval_tz_top{k}", v, prog_bar=False, on_step=False, on_epoch=True)
+                    self.log(f"train/retrieval_tz_{k}", v, prog_bar=False, on_step=False, on_epoch=True, batch_size=bs)
 
         return out["loss"]
 
@@ -2379,7 +4196,7 @@ def run_baseline(cfg: DictConfig):
     dl = make_loaders(X, texts, cfg.train.batch_size, cfg.train.num_workers)
     model = LitModule(cfg, clip_feats)
 
-    # Optional: W&B logger (safe fallback to no-logger)
+    # Optional: logger (W&B disabled by default in your config)
     logger = False
     try:
         if getattr(cfg.wandb, "enabled", False):
