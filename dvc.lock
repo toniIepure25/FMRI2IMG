@@ -26,8 +26,8 @@ stages:
       size: 211
     - path: configs/train/baseline.yaml
       hash: md5
-      md5: 9005825d02ef13afb05055f967f6268f
-      size: 434
+      md5: 34b0eb8bc73b4e86b785796d3dddc663
+      size: 930
     - path: data/processed/nsd/clip_text.npy
       hash: md5
       md5: 2577ce444d57eb6c9b162b4a4c8b09f4
@@ -46,13 +46,13 @@ stages:
       size: 448
     - path: src/fmri2image/pipelines/baseline_train.py
       hash: md5
-      md5: 44dd1a3fdeef88fb8b9155483e7cc167
-      size: 6240
+      md5: 4235ee8e77b289eed2ec57285a46fbab
+      size: 9838
     outs:
     - path: outputs
       hash: md5
-      md5: ceca2a359232b632d1d409d728ab4dec.dir
-      size: 6078
+      md5: c9d45422aec828d538f162374e38999f.dir
+      size: 6728
       nfiles: 4
   roi_extract:
     cmd: "python -m fmri2image.data.extract_roi --fmriprep_dir data/processed/nsd/fmriprep
@@ -90,3 +90,26 @@ stages:
       hash: md5
       md5: 2577ce444d57eb6c9b162b4a4c8b09f4
       size: 6272
+  pretrain_encoder:
+    cmd: "python -m fmri2image.selfsupervised.pretrain_fmri --images_root data/raw/nsd/images
+      --fmri_root data/raw/nsd/fmri --captions data/raw/nsd/captions.csv --roi_dir
+      data/processed/nsd/roi --subject subj01 --dim 2048 --mask_ratio 0.5 --lr 1e-3
+      --epochs 2 --batch_size 16 --num_workers 4 --out_ckpt data/artifacts/encoder_pretrained.ckpt\n"
+    deps:
+    - path: data/processed/nsd/roi/subj01_roi.npy
+      hash: md5
+      md5: 47c9fb596d852b19d0a97abc4504a6ae
+      size: 983168
+    - path: src/fmri2image/data/nsd_reader.py
+      hash: md5
+      md5: 36d85d4ecab163fa022f4e5388d56dda
+      size: 1110
+    - path: src/fmri2image/selfsupervised/pretrain_fmri.py
+      hash: md5
+      md5: 4f5b993d4bad0747b4dedd699e4ee9a5
+      size: 3960
+    outs:
+    - path: data/artifacts/encoder_pretrained.ckpt
+      hash: md5
+      md5: 04a629f13e039b482e0b6686f20ab5a3
+      size: 25180747

@@ -17,7 +17,7 @@ loss:
   symmetric: true # use both fMRI->text and text->fMRI
   weights:
     contrastive: 1.0
-    cca: 0.1 # set 0.0 to disable contribution
+    cca: 0.05 # set 0.0 to disable contribution
 eval:
   topk: [1, 5]
 
