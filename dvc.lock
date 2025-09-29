@@ -26,8 +26,8 @@ stages:
       size: 211
     - path: configs/train/baseline.yaml
       hash: md5
-      md5: 9801b9aeb6861586cf203650fc772a9e
-      size: 231
+      md5: 9005825d02ef13afb05055f967f6268f
+      size: 434
     - path: data/processed/nsd/clip_text.npy
       hash: md5
       md5: 2577ce444d57eb6c9b162b4a4c8b09f4
@@ -46,13 +46,13 @@ stages:
       size: 448
     - path: src/fmri2image/pipelines/baseline_train.py
       hash: md5
-      md5: 960ca40fa77c97e107130f93cb1fe5a5
-      size: 2646
+      md5: 2bc217f4c92247f206831d0203181cdf
+      size: 6184
     outs:
     - path: outputs
       hash: md5
-      md5: f3af829ab32b932a4b609de1671d9486.dir
-      size: 5854
+      md5: fdc9cab183abf9a24e255960effbc07f.dir
+      size: 6078
       nfiles: 4
   roi_extract:
     cmd: "python -m fmri2image.data.extract_roi --fmriprep_dir data/processed/nsd/fmriprep

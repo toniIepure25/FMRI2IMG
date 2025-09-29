@@ -93,21 +93,23 @@ class LitModule(pl.LightningModule):
         t = self.clip_text_feats.index_select(0, idx.long())  # [B, D] on correct device
 
         out = self.criterion(z, t)
-        self.log("train/loss", out["loss"], prog_bar=True, on_step=True, on_epoch=True)
-        self.log("train/temp", out["temp"], prog_bar=False, on_step=True, on_epoch=True)
+
+        bs = x.size(0)
+        self.log("train/loss", out["loss"], prog_bar=True, on_step=True, on_epoch=True, batch_size=bs)
+        self.log("train/temp", out["temp"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
 
         # Retrieval metrics within-batch (ranking unaffected by temperature)
         with torch.no_grad():
             sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)  # remove scale
             m_zt = topk_retrieval(sim_zt, self.topk)
             for k, v in m_zt.items():
-                self.log(f"train/retrieval_zt_top{k}", v, prog_bar=True, on_step=False, on_epoch=True)
+                self.log(f"train/retrieval_zt_{k}", v, prog_bar=True, on_step=False, on_epoch=True)
 
             if out["logits_tz"] is not None:
                 sim_tz = out["logits_tz"] / torch.exp(self.criterion.logit_scale)
                 m_tz = topk_retrieval(sim_tz, self.topk)
                 for k, v in m_tz.items():
-                    self.log(f"train/retrieval_tz_top{k}", v, prog_bar=False, on_step=False, on_epoch=True)
+                    self.log(f"train/retrieval_tz_{k}", v, prog_bar=False, on_step=False, on_epoch=True)        
 
         return out["loss"]
 
