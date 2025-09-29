@@ -1,4 +1,4 @@
-enabled: true
+enabled: false # Switch to true to enable Weights & Biases logging
 project: ${oc.env:WANDB_PROJECT, fmri2image}
 entity: ${oc.env:WANDB_ENTITY, null}
 mode: online
