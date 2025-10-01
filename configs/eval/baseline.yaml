@@ -1,0 +1,5 @@
+# configs/eval/baseline.yaml
+metrics: [ssim, psnr, clip_score]
+batch_size: 4
+num_workers: 4
+checkpoint: "data/artifacts/encoder_pretrained.ckpt" # sau outputs/<data>/abl_*/checkpoints/last.ckpt
