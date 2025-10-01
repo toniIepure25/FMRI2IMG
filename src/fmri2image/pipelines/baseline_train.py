@@ -264,17 +264,20 @@ def run_baseline(cfg: DictConfig):
 
     callbacks = []
     enable_ckpt = bool(getattr(cfg.train, "checkpointing", False))
+    ckpt_dir = None
     if enable_ckpt:
         ckpt_dir = os.path.join(cfg.run.output_dir, "checkpoints")
         os.makedirs(ckpt_dir, exist_ok=True)
         ckpt_cb = ModelCheckpoint(
-            dirpath=ckpt_dir,                 # <— IMPORTANT
+            dirpath=ckpt_dir,
             save_last=True,
             save_top_k=1,
             monitor="train/loss_epoch",
             mode="min",
             filename="epoch{epoch:02d}-step{step}",
             auto_insert_metric_name=False,
+            every_n_train_steps=1,          
+            save_on_train_epoch_end=True,   
         )
         callbacks.append(ckpt_cb)
 
@@ -282,9 +285,19 @@ def run_baseline(cfg: DictConfig):
         max_epochs=cfg.train.max_epochs,
         precision=cfg.train.precision,
         default_root_dir=cfg.run.output_dir,
-        enable_checkpointing=enable_ckpt,                 
-        callbacks=callbacks if callbacks else None,       
+        enable_checkpointing=enable_ckpt,
+        callbacks=callbacks if callbacks else None,
         logger=logger,
         log_every_n_steps=int(getattr(cfg.train, "log_every_n_steps", 50)),
         profiler=profiler,
     )
+
+    trainer.fit(model, dl)
+
+    if enable_ckpt and ckpt_dir is not None:
+        last_path = os.path.join(ckpt_dir, "last.ckpt")
+        try:
+            trainer.save_checkpoint(last_path)
+            print(f"[ckpt] saved last checkpoint -> {last_path}")
+        except Exception as e:
+            print(f"[ckpt] WARN: could not save last.ckpt: {e}")
