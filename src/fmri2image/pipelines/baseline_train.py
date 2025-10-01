@@ -267,6 +267,6 @@ def run_baseline(cfg: DictConfig):
         default_root_dir=cfg.run.output_dir,
         enable_checkpointing=False,
         logger=logger,
-        profiler=profiler,
+        log_every_n_steps=int(getattr(cfg.train, "log_every_n_steps", 50)),  # <— NEW
+        profiler=profiler,                                                    # <— NEW (None if not used)
     )
-    trainer.fit(model, dl)
