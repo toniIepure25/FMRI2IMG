@@ -1,0 +1,83 @@
+[2025-09-30 00:21:16,242][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_train
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+

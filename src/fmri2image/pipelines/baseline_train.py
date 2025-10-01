@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pytorch_lightning as pl
+from pytorch_lightning.profiler import AdvancedProfiler
 
 from ..models.encoders.mlp_encoder import FMRIEncoderMLP
 from ..models.encoders.vit3d_encoder import ViT3DEncoderLite
@@ -165,7 +166,7 @@ class LitModule(pl.LightningModule):
 
         # --- Optional Deep CCA (auxiliary) ---
         if self.use_cca and self.w_cca > 0:
-            cca_out = self.cca(z.detach(), t.detach())  # keep it auxiliary; no grad through encoder
+            cca_out = self.cca(z.detach(), t.detach())  # auxiliary; no grad through encoder
             loss_total = loss_total + self.w_cca * cca_out["loss"]
         else:
             cca_out = None
@@ -180,8 +181,7 @@ class LitModule(pl.LightningModule):
 
         # --- Retrieval metrics within-batch (ranking unaffected by temperature) ---
         with torch.no_grad():
-            # remove temperature for ranking
-            sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)
+            sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)  # remove scale for ranking
             m_zt = topk_retrieval(sim_zt, self.topk)
             for k, v in m_zt.items():
                 self.log(f"train/retrieval_zt_{k}", v, prog_bar=True, on_step=False, on_epoch=True, batch_size=bs)
@@ -227,7 +227,7 @@ def run_baseline(cfg: DictConfig):
         print(f"[pretrain] loaded encoder weights from {pre_ckpt} "
               f"(missing={len(missing)}, unexpected={len(unexpected)})")
 
-    # Optional: logger (W&B disabled by default in your config)
+    # Optional: W&B logger (disabled by default)
     logger = False
     try:
         if getattr(cfg.wandb, "enabled", False):
@@ -240,11 +240,26 @@ def run_baseline(cfg: DictConfig):
     except Exception:
         logger = False
 
+    # Fallback to CSVLogger (writes outputs/<date>/<run.name>/metrics.csv)
+    if logger is False:
+        from pytorch_lightning.loggers import CSVLogger
+        from pathlib import Path
+        Path("outputs").mkdir(parents=True, exist_ok=True)
+        logger = CSVLogger(save_dir="outputs", name=cfg.run.name)
+
+    # Optional profiler (enable with train.profile=true)
+    profiler = None
+    if bool(getattr(getattr(cfg, "train", {}), "profile", False)):
+        from pathlib import Path
+        Path("reports").mkdir(parents=True, exist_ok=True)
+        profiler = AdvancedProfiler(dirpath="reports", filename="profile.txt")
+
     trainer = pl.Trainer(
         max_epochs=cfg.train.max_epochs,
         precision=cfg.train.precision,
         default_root_dir=cfg.run.output_dir,
         enable_checkpointing=False,
         logger=logger,
+        profiler=profiler,
     )
     trainer.fit(model, dl)
