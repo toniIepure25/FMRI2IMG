@@ -1,0 +1,7 @@
+[eval] loaded checkpoint: outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt (missing=8, unexpected=0)
+
+=== Retrieval metrics (full set) ===
+top1: 0.000
+top3: 1.000
+
+[eval] Am scris rezultatele în: reports/eval/retrieval.txt
