@@ -22,4 +22,7 @@ dist/
 /outputs
 
 # Reports
-reports/
+reports/``
+# allow DVC metadata in data/artifacts
+!data/artifacts/**/*.dvc
+!data/artifacts/**/.gitignore
