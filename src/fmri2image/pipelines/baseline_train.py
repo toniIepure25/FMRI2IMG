@@ -5,7 +5,14 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pytorch_lightning as pl
-from pytorch_lightning.profiler import AdvancedProfiler
+
+try:
+    from pytorch_lightning.profilers import AdvancedProfiler  # PL >= 2.0
+except Exception:  # pragma: no cover
+    try:
+        from pytorch_lightning.profiler import AdvancedProfiler  # PL 1.x
+    except Exception:
+        AdvancedProfiler = None  # fallback if profiler isn't available
 
 from ..models.encoders.mlp_encoder import FMRIEncoderMLP
 from ..models.encoders.vit3d_encoder import ViT3DEncoderLite
@@ -249,7 +256,7 @@ def run_baseline(cfg: DictConfig):
 
     # Optional profiler (enable with train.profile=true)
     profiler = None
-    if bool(getattr(getattr(cfg, "train", {}), "profile", False)):
+    if bool(getattr(getattr(cfg, "train", {}), "profile", False)) and AdvancedProfiler is not None:
         from pathlib import Path
         Path("reports").mkdir(parents=True, exist_ok=True)
         profiler = AdvancedProfiler(dirpath="reports", filename="profile.txt")
