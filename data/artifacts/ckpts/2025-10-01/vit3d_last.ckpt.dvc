@@ -1,0 +1,5 @@
+outs:
+- md5: 56c589e06fcd253dbb68618153cf49b2
+  size: 16644773
+  hash: md5
+  path: vit3d_last.ckpt

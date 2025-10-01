@@ -1,0 +1,5 @@
+outs:
+- md5: c99449857c8942ca9d0cd598c5469dbc
+  size: 91298948
+  hash: md5
+  path: mlp_last.ckpt

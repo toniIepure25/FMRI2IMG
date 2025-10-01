@@ -1,0 +1,5 @@
+outs:
+- md5: eabb8c8e97ec27c0b69b6a5d7b4227ee
+  size: 91299140
+  hash: md5
+  path: gnn_last.ckpt
