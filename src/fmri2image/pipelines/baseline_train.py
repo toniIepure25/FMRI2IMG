@@ -265,10 +265,13 @@ def run_baseline(cfg: DictConfig):
     callbacks = []
     enable_ckpt = bool(getattr(cfg.train, "checkpointing", False))
     if enable_ckpt:
+        ckpt_dir = os.path.join(cfg.run.output_dir, "checkpoints")
+        os.makedirs(ckpt_dir, exist_ok=True)
         ckpt_cb = ModelCheckpoint(
+            dirpath=ckpt_dir,                 # <— IMPORTANT
             save_last=True,
             save_top_k=1,
-            monitor="train/loss_epoch",   # avem acest log
+            monitor="train/loss_epoch",
             mode="min",
             filename="epoch{epoch:02d}-step{step}",
             auto_insert_metric_name=False,
@@ -279,8 +282,9 @@ def run_baseline(cfg: DictConfig):
         max_epochs=cfg.train.max_epochs,
         precision=cfg.train.precision,
         default_root_dir=cfg.run.output_dir,
-        enable_checkpointing=False,
+        enable_checkpointing=enable_ckpt,                 
+        callbacks=callbacks if callbacks else None,       
         logger=logger,
-        log_every_n_steps=int(getattr(cfg.train, "log_every_n_steps", 50)),  # <— NEW
-        profiler=profiler,                                                    # <— NEW (None if not used)
+        log_every_n_steps=int(getattr(cfg.train, "log_every_n_steps", 50)),
+        profiler=profiler,
     )
