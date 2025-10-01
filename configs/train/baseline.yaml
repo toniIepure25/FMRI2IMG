@@ -41,3 +41,6 @@ cca:
 
 pretrained:
   path: data/artifacts/encoder_pretrained.ckpt # leave empty to skip
+
+profile: false # to activate a profiler with ++train.profile=true
+log_every_n_steps: 1 # to log even when you have few batches
