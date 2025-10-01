@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 try:
     from pytorch_lightning.profilers import AdvancedProfiler  # PL >= 2.0
@@ -260,6 +261,19 @@ def run_baseline(cfg: DictConfig):
         from pathlib import Path
         Path("reports").mkdir(parents=True, exist_ok=True)
         profiler = AdvancedProfiler(dirpath="reports", filename="profile.txt")
+
+    callbacks = []
+    enable_ckpt = bool(getattr(cfg.train, "checkpointing", False))
+    if enable_ckpt:
+        ckpt_cb = ModelCheckpoint(
+            save_last=True,
+            save_top_k=1,
+            monitor="train/loss_epoch",   # avem acest log
+            mode="min",
+            filename="epoch{epoch:02d}-step{step}",
+            auto_insert_metric_name=False,
+        )
+        callbacks.append(ckpt_cb)
 
     trainer = pl.Trainer(
         max_epochs=cfg.train.max_epochs,
