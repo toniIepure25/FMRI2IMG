@@ -1,0 +1,4 @@
+sample_idx,top1_idx,top1_score,top1_text,top2_idx,top2_score,top2_text,top3_idx,top3_score,top3_text
+0,0,0.1904,a dog on grass,2,-0.0594,a mountain scene,1,-0.2622,a red car
+1,1,0.1953,a red car,2,-0.0050,a mountain scene,0,-0.1793,a dog on grass
+2,0,0.0373,a dog on grass,1,-0.0105,a red car,2,-0.0148,a mountain scene
