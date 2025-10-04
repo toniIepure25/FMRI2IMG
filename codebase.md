@@ -761,6 +761,10 @@ Struc.: raw/nsd/images/, raw/nsd/fmri/, raw/nsd/captions.csv
 
 This is a binary file of the type: Binary
 
+# .dvc/cache/files/md5/56/c589e06fcd253dbb68618153cf49b2
+
+This is a binary file of the type: Binary
+
 # .dvc/cache/files/md5/60/81bbb2697282d0d75d61047f8b0246
 
 ```
@@ -1566,6 +1570,10 @@ run:
 
 ```
 
+# .dvc/cache/files/md5/c9/9449857c8942ca9d0cd598c5469dbc
+
+This is a binary file of the type: Binary
+
 # .dvc/cache/files/md5/c9/d45422aec828d538f162374e38999f.dir
 
 ```dir
@@ -1895,6 +1903,10 @@ run:
 
 
 ```
+
+# .dvc/cache/files/md5/ea/bb8c8e97ec27c0b69b6a5d7b4227ee
+
+This is a binary file of the type: Binary
 
 # .dvc/cache/files/md5/f3/af829ab32b932a4b609de1671d9486.dir
 
@@ -2951,6 +2963,12 @@ dist/
 !configs/**
 /outputs
 
+# Reports
+reports/``
+# allow DVC metadata in data/artifacts
+!data/artifacts/**/*.dvc
+!data/artifacts/**/.gitignore
+
 ```
 
 # .pre-commit-config.yaml
@@ -3083,6 +3101,17 @@ roi:
 
 ```
 
+# configs/eval/baseline.yaml
+
+```yaml
+# configs/eval/baseline.yaml
+metrics: [ssim, psnr, clip_score]
+batch_size: 4
+num_workers: 4
+checkpoint: "data/artifacts/encoder_pretrained.ckpt" # sau outputs/<data>/abl_*/checkpoints/last.ckpt
+
+```
+
 # configs/eval/default.yaml
 
 ```yaml
@@ -3147,6 +3176,9 @@ cca:
 pretrained:
   path: data/artifacts/encoder_pretrained.ckpt # leave empty to skip
 
+profile: false # to activate a profiler with ++train.profile=true
+log_every_n_steps: 1 # to log even when you have few batches
+
 ```
 
 # configs/train/debug.yaml
@@ -3190,6 +3222,69 @@ enabled: false # Switch to true to enable Weights & Biases logging
 project: ${oc.env:WANDB_PROJECT, fmri2image}
 entity: ${oc.env:WANDB_ENTITY, null}
 mode: online
+
+```
+
+# data/artifacts/.gitignore
+
+```
+*
+!.gitignore
+!*.dvc
+
+```
+
+# data/artifacts/ckpts/.gitignore
+
+```
+*
+!.gitignore
+!*.dvc
+
+```
+
+# data/artifacts/ckpts/2025-10-01/gnn_last.ckpt
+
+This is a binary file of the type: Binary
+
+# data/artifacts/ckpts/2025-10-01/gnn_last.ckpt.dvc
+
+```dvc
+outs:
+- md5: eabb8c8e97ec27c0b69b6a5d7b4227ee
+  size: 91299140
+  hash: md5
+  path: gnn_last.ckpt
+
+```
+
+# data/artifacts/ckpts/2025-10-01/mlp_last.ckpt
+
+This is a binary file of the type: Binary
+
+# data/artifacts/ckpts/2025-10-01/mlp_last.ckpt.dvc
+
+```dvc
+outs:
+- md5: c99449857c8942ca9d0cd598c5469dbc
+  size: 91298948
+  hash: md5
+  path: mlp_last.ckpt
+
+```
+
+# data/artifacts/ckpts/2025-10-01/vit3d_last.ckpt
+
+This is a binary file of the type: Binary
+
+# data/artifacts/ckpts/2025-10-01/vit3d_last.ckpt.dvc
+
+```dvc
+outs:
+- md5: 56c589e06fcd253dbb68618153cf49b2
+  size: 16644773
+  hash: md5
+  path: vit3d_last.ckpt
 
 ```
 
@@ -5608,6 +5703,6354 @@ run:
 
 ```
 
+# outputs/2025-10-01/22-35-52/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/22-35-52/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_mlp
+    - train.encoder=mlp
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_mlp,train.encoder=mlp
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/22-35-52
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/22-35-52/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_mlp
+- train.encoder=mlp
+
+```
+
+# outputs/2025-10-01/22-35-52/cli.log
+
+```log
+[2025-10-01 22:35:52,929][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/22-35-59/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: vit3d
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_vit3d
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/22-35-59/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_vit3d
+    - train.encoder=vit3d
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_vit3d,train.encoder=vit3d
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/22-35-59
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/22-35-59/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_vit3d
+- train.encoder=vit3d
+
+```
+
+# outputs/2025-10-01/22-35-59/cli.log
+
+```log
+[2025-10-01 22:35:59,859][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: vit3d
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_vit3d
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/22-36-04/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: gnn
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_gnn
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/22-36-04/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_gnn
+    - train.encoder=gnn
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_gnn,train.encoder=gnn
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/22-36-04
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/22-36-04/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_gnn
+- train.encoder=gnn
+
+```
+
+# outputs/2025-10-01/22-36-04/cli.log
+
+```log
+[2025-10-01 22:36:04,163][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: gnn
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_gnn
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/22-41-25/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: true
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: prof_mlp_profile
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/22-41-25/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=prof_mlp_profile
+    - train.encoder=mlp
+    - ++train.profile=true
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=prof_mlp_profile,++train.profile=true,train.encoder=mlp
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/22-41-25
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/22-41-25/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=prof_mlp_profile
+- train.encoder=mlp
+- ++train.profile=true
+
+```
+
+# outputs/2025-10-01/22-41-25/cli.log
+
+```log
+[2025-10-01 22:41:25,356][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: true
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: prof_mlp_profile
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/22-41-41/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/22-41-41/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_mlp
+    - train.encoder=mlp
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_mlp,train.encoder=mlp
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/22-41-41
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/22-41-41/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_mlp
+- train.encoder=mlp
+
+```
+
+# outputs/2025-10-01/22-41-41/cli.log
+
+```log
+[2025-10-01 22:41:41,905][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/22-41-45/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: vit3d
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_vit3d
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/22-41-45/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_vit3d
+    - train.encoder=vit3d
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_vit3d,train.encoder=vit3d
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/22-41-45
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/22-41-45/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_vit3d
+- train.encoder=vit3d
+
+```
+
+# outputs/2025-10-01/22-41-45/cli.log
+
+```log
+[2025-10-01 22:41:45,195][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: vit3d
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_vit3d
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/22-41-48/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: gnn
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_gnn
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/22-41-48/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_gnn
+    - train.encoder=gnn
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_gnn,train.encoder=gnn
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/22-41-48
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/22-41-48/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_gnn
+- train.encoder=gnn
+
+```
+
+# outputs/2025-10-01/22-41-48/cli.log
+
+```log
+[2025-10-01 22:41:48,448][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: gnn
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_gnn
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/23-03-21/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-03-21/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_mlp_ckpt
+    - train.encoder=mlp
+    - ++train.checkpointing=true
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_mlp_ckpt,++train.checkpointing=true,train.encoder=mlp
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-03-21
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-03-21/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_mlp_ckpt
+- train.encoder=mlp
+- ++train.checkpointing=true
+
+```
+
+# outputs/2025-10-01/23-03-21/cli.log
+
+```log
+[2025-10-01 23:03:21,592][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/23-06-28/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-06-28/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_mlp_ckpt
+    - train.encoder=mlp
+    - ++train.checkpointing=true
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_mlp_ckpt,++train.checkpointing=true,train.encoder=mlp
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-06-28
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-06-28/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_mlp_ckpt
+- train.encoder=mlp
+- ++train.checkpointing=true
+
+```
+
+# outputs/2025-10-01/23-06-28/cli.log
+
+```log
+[2025-10-01 23:06:28,977][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/23-10-55/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-10-55/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_mlp_ckpt
+    - train.encoder=mlp
+    - ++train.checkpointing=true
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_mlp_ckpt,++train.checkpointing=true,train.encoder=mlp
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-10-55
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-10-55/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_mlp_ckpt
+- train.encoder=mlp
+- ++train.checkpointing=true
+
+```
+
+# outputs/2025-10-01/23-10-55/cli.log
+
+```log
+[2025-10-01 23:10:55,979][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/23-16-08/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-16-08/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_mlp_ckpt
+    - train.encoder=mlp
+    - ++train.checkpointing=true
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_mlp_ckpt,++train.checkpointing=true,train.encoder=mlp
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-16-08
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-16-08/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_mlp_ckpt
+- train.encoder=mlp
+- ++train.checkpointing=true
+
+```
+
+# outputs/2025-10-01/23-16-08/cli.log
+
+```log
+[2025-10-01 23:16:08,090][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_mlp_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/23-16-15/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+  checkpoint: outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-16-15/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - +eval.checkpoint=outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt
+  job:
+    name: eval
+    chdir: null
+    override_dirname: +eval.checkpoint=outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-16-15
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-16-15/.hydra/overrides.yaml
+
+```yaml
+- +eval.checkpoint=outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt
+
+```
+
+# outputs/2025-10-01/23-16-15/eval.log
+
+```log
+
+```
+
+# outputs/2025-10-01/23-19-19/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: vit3d
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_vit3d_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-19-19/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_vit3d_ckpt
+    - train.encoder=vit3d
+    - ++train.checkpointing=true
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_vit3d_ckpt,++train.checkpointing=true,train.encoder=vit3d
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-19-19
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-19-19/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_vit3d_ckpt
+- train.encoder=vit3d
+- ++train.checkpointing=true
+
+```
+
+# outputs/2025-10-01/23-19-19/cli.log
+
+```log
+[2025-10-01 23:19:19,176][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: vit3d
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_vit3d_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/23-19-26/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+  checkpoint: outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-19-26/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - +eval.checkpoint=outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt
+  job:
+    name: eval
+    chdir: null
+    override_dirname: +eval.checkpoint=outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-19-26
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-19-26/.hydra/overrides.yaml
+
+```yaml
+- +eval.checkpoint=outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt
+
+```
+
+# outputs/2025-10-01/23-19-26/eval.log
+
+```log
+
+```
+
+# outputs/2025-10-01/23-19-30/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: gnn
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_gnn_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-19-30/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - ++run.name=abl_gnn_ckpt
+    - train.encoder=gnn
+    - ++train.checkpointing=true
+  job:
+    name: cli
+    chdir: null
+    override_dirname: ++run.name=abl_gnn_ckpt,++train.checkpointing=true,train.encoder=gnn
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-19-30
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-19-30/.hydra/overrides.yaml
+
+```yaml
+- ++run.name=abl_gnn_ckpt
+- train.encoder=gnn
+- ++train.checkpointing=true
+
+```
+
+# outputs/2025-10-01/23-19-30/cli.log
+
+```log
+[2025-10-01 23:19:30,436][__main__][INFO] - Config:
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: gnn
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+  checkpointing: true
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: abl_gnn_ckpt
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+
+```
+
+# outputs/2025-10-01/23-19-37/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+  checkpoint: outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-19-37/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - +eval.checkpoint=outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt
+  job:
+    name: eval
+    chdir: null
+    override_dirname: +eval.checkpoint=outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-19-37
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-19-37/.hydra/overrides.yaml
+
+```yaml
+- +eval.checkpoint=outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt
+
+```
+
+# outputs/2025-10-01/23-19-37/eval.log
+
+```log
+
+```
+
+# outputs/2025-10-01/23-23-09/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+  checkpoint: outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-23-09/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - +eval.checkpoint=outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt
+  job:
+    name: eval
+    chdir: null
+    override_dirname: +eval.checkpoint=outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-23-09
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-23-09/.hydra/overrides.yaml
+
+```yaml
+- +eval.checkpoint=outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt
+
+```
+
+# outputs/2025-10-01/23-23-09/eval.log
+
+```log
+
+```
+
+# outputs/2025-10-01/23-23-16/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+  checkpoint: outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-23-16/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - +eval.checkpoint=outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt
+  job:
+    name: eval
+    chdir: null
+    override_dirname: +eval.checkpoint=outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-23-16
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-23-16/.hydra/overrides.yaml
+
+```yaml
+- +eval.checkpoint=outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt
+
+```
+
+# outputs/2025-10-01/23-23-16/eval.log
+
+```log
+
+```
+
+# outputs/2025-10-01/23-23-20/.hydra/config.yaml
+
+```yaml
+paths:
+  data_dir: ${oc.env:DATA_DIR, ./data}
+  raw_dir: ${paths.data_dir}/raw
+  proc_dir: ${paths.data_dir}/processed
+  artifacts_dir: ${paths.data_dir}/artifacts
+data:
+  name: nsd
+  subjects:
+  - subj01
+  split:
+    train_ratio: 0.9
+    seed: 42
+  paths:
+    images_root: ${paths.raw_dir}/nsd/images
+    fmri_root: ${paths.raw_dir}/nsd/fmri
+    captions: ${paths.raw_dir}/nsd/captions.csv
+  fmriprep:
+    bids_root: ${paths.raw_dir}/nsd/bids
+    out_root: ${paths.proc_dir}/nsd/fmriprep
+    fs_license: ${oc.env:FS_LICENSE, ./licenses/freesurfer_license.txt}
+  roi:
+    mode: atlas
+    atlas: glasser
+    vector_dim: 2048
+    out_dir: ${paths.proc_dir}/nsd/roi
+train:
+  max_epochs: 1
+  batch_size: 2
+  num_workers: 4
+  precision: 32
+  optimizer:
+    lr: 0.001
+  model:
+    fmri_input_dim: 2048
+    latent_dim: 768
+    hidden:
+    - 2048
+    - 1024
+    - 768
+  loss:
+    type: contrastive
+    temperature_init: 0.07
+    symmetric: true
+    weights:
+      contrastive: 1.0
+      cca: 0.05
+  eval:
+    topk:
+    - 1
+    - 5
+  encoder: mlp
+  gnn:
+    use_identity_adj: true
+    dropout: 0.1
+  vit3d:
+    time_steps: 8
+    patch: 1
+    depth: 2
+    heads: 4
+    mlp_ratio: 2.0
+    dropout: 0.1
+  cca:
+    enabled: true
+    proj_dim: 128
+  pretrained:
+    path: data/artifacts/encoder_pretrained.ckpt
+  profile: false
+  log_every_n_steps: 1
+eval:
+  metrics:
+  - ssim
+  - psnr
+  - clip_score
+  checkpoint: outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt
+wandb:
+  enabled: false
+  project: ${oc.env:WANDB_PROJECT, fmri2image}
+  entity: ${oc.env:WANDB_ENTITY, null}
+  mode: online
+seed: 1337
+device: cuda
+run:
+  name: baseline_debug
+  output_dir: outputs/${now:%Y-%m-%d}/${run.name}
+
+```
+
+# outputs/2025-10-01/23-23-20/.hydra/hydra.yaml
+
+```yaml
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=RUN
+    task:
+    - +eval.checkpoint=outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt
+  job:
+    name: eval
+    chdir: null
+    override_dirname: +eval.checkpoint=outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/tonystark/Desktop/Bachelor/fmri2image
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/tonystark/Desktop/Bachelor/fmri2image/configs
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/tonystark/Desktop/Bachelor/fmri2image/outputs/2025-10-01/23-23-20
+    choices:
+      wandb: wandb
+      eval: default
+      train: baseline
+      data: nsd
+      paths: paths
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+
+```
+
+# outputs/2025-10-01/23-23-20/.hydra/overrides.yaml
+
+```yaml
+- +eval.checkpoint=outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt
+
+```
+
+# outputs/2025-10-01/23-23-20/eval.log
+
+```log
+
+```
+
+# outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt
+
+This is a binary file of the type: Binary
+
+# outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt
+
+This is a binary file of the type: Binary
+
+# outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt
+
+This is a binary file of the type: Binary
+
+# outputs/abl_gnn_ckpt/version_0/hparams.yaml
+
+```yaml
+{}
+
+```
+
+# outputs/abl_gnn_ckpt/version_0/metrics.csv
+
+```csv
+epoch,step,train/cca_corr_epoch,train/cca_corr_step,train/loss_contrast_epoch,train/loss_contrast_step,train/loss_epoch,train/loss_step,train/retrieval_tz_top1,train/retrieval_tz_top5,train/retrieval_zt_top1,train/retrieval_zt_top5,train/temp_epoch,train/temp_step
+0,0,,1.0,,0.7062790393829346,,0.6562790274620056,,,,,,0.07000000029802322
+0,0,1.0,,0.7062790393829346,,0.6562790274620056,,0.5,1.0,0.5,1.0,0.07000000029802322,
+
+```
+
+# outputs/abl_gnn/version_0/hparams.yaml
+
+```yaml
+{}
+
+```
+
+# outputs/abl_gnn/version_0/metrics.csv
+
+```csv
+epoch,step,train/cca_corr_epoch,train/loss_contrast_epoch,train/loss_epoch,train/retrieval_tz_top1,train/retrieval_tz_top5,train/retrieval_zt_top1,train/retrieval_zt_top5,train/temp_epoch
+0,0,1.0,0.7062790393829346,0.6562790274620056,0.5,1.0,0.5,1.0,0.07000000029802322
+
+```
+
+# outputs/abl_mlp_ckpt/version_0/hparams.yaml
+
+```yaml
+{}
+
+```
+
+# outputs/abl_mlp_ckpt/version_0/metrics.csv
+
+```csv
+epoch,step,train/cca_corr_epoch,train/cca_corr_step,train/loss_contrast_epoch,train/loss_contrast_step,train/loss_epoch,train/loss_step,train/retrieval_tz_top1,train/retrieval_tz_top5,train/retrieval_zt_top1,train/retrieval_zt_top5,train/temp_epoch,train/temp_step
+0,0,,1.0,,0.6745018362998962,,0.6245018243789673,,,,,,0.07000000029802322
+0,0,1.0,,0.6745018362998962,,0.6245018243789673,,0.5,1.0,0.5,1.0,0.07000000029802322,
+
+```
+
+# outputs/abl_mlp/version_0/hparams.yaml
+
+```yaml
+{}
+
+```
+
+# outputs/abl_mlp/version_0/metrics.csv
+
+```csv
+epoch,step,train/cca_corr_epoch,train/loss_contrast_epoch,train/loss_epoch,train/retrieval_tz_top1,train/retrieval_tz_top5,train/retrieval_zt_top1,train/retrieval_zt_top5,train/temp_epoch
+0,0,1.0,0.6745018362998962,0.6245018243789673,0.5,1.0,0.5,1.0,0.07000000029802322
+
+```
+
+# outputs/abl_vit3d_ckpt/version_0/hparams.yaml
+
+```yaml
+{}
+
+```
+
+# outputs/abl_vit3d_ckpt/version_0/metrics.csv
+
+```csv
+epoch,step,train/cca_corr_epoch,train/cca_corr_step,train/loss_contrast_epoch,train/loss_contrast_step,train/loss_epoch,train/loss_step,train/retrieval_tz_top1,train/retrieval_tz_top5,train/retrieval_zt_top1,train/retrieval_zt_top5,train/temp_epoch,train/temp_step
+0,0,,1.0,,0.9193905591964722,,0.8693905472755432,,,,,,0.07000000029802322
+0,0,1.0,,0.9193905591964722,,0.8693905472755432,,0.5,1.0,0.5,1.0,0.07000000029802322,
+
+```
+
+# outputs/abl_vit3d/version_0/hparams.yaml
+
+```yaml
+{}
+
+```
+
+# outputs/abl_vit3d/version_0/metrics.csv
+
+```csv
+epoch,step,train/cca_corr_epoch,train/loss_contrast_epoch,train/loss_epoch,train/retrieval_tz_top1,train/retrieval_tz_top5,train/retrieval_zt_top1,train/retrieval_zt_top5,train/temp_epoch
+0,0,1.0,0.9193905591964722,0.8693905472755432,0.5,1.0,0.5,1.0,0.07000000029802322
+
+```
+
 # pyproject.toml
 
 ```toml
@@ -5684,6 +12127,129 @@ python -m fmri2image.cli
 \`\`\`
 
 ```
+
+# reports/eval/retrieval_gnn.txt
+
+```txt
+[eval] loaded checkpoint: outputs/2025-10-01/abl_gnn_ckpt/checkpoints/last.ckpt (missing=8, unexpected=0)
+
+=== Retrieval metrics (full set) ===
+top1: 0.000
+top3: 1.000
+
+[eval] Am scris rezultatele în: reports/eval/retrieval.txt
+
+```
+
+# reports/eval/retrieval_mlp.txt
+
+```txt
+[eval] loaded checkpoint: outputs/2025-10-01/abl_mlp_ckpt/checkpoints/last.ckpt (missing=0, unexpected=0)
+
+=== Retrieval metrics (full set) ===
+top1: 0.667
+top3: 1.000
+
+[eval] Am scris rezultatele în: reports/eval/retrieval.txt
+
+```
+
+# reports/eval/retrieval_vit3d.txt
+
+```txt
+[eval] loaded checkpoint: outputs/2025-10-01/abl_vit3d_ckpt/checkpoints/last.ckpt (missing=8, unexpected=0)
+
+=== Retrieval metrics (full set) ===
+top1: 0.333
+top3: 1.000
+
+[eval] Am scris rezultatele în: reports/eval/retrieval.txt
+
+```
+
+# reports/eval/retrieval.txt
+
+```txt
+top1: 0.000000
+top3: 1.000000
+
+```
+
+# reports/infer/compare_top3_all.csv
+
+```csv
+sample,rank,text_idx,score,encoder
+0,1,0,0.2655,mlp
+1,1,1,0.1849,mlp
+2,1,0,0.0769,mlp
+0,2,2,-0.0301,mlp
+1,2,2,-0.0235,mlp
+2,2,2,-0.0056,mlp
+0,3,1,-0.2524,mlp
+1,3,0,-0.2128,mlp
+2,3,1,-0.0695,mlp
+0,1,1,0.0521,vit3d
+1,1,1,0.2328,vit3d
+2,1,0,-0.1062,vit3d
+0,2,0,0.0162,vit3d
+1,2,0,-0.0182,vit3d
+2,2,2,-0.1279,vit3d
+0,3,2,-0.0921,vit3d
+1,3,2,-0.1525,vit3d
+2,3,1,-0.2722,vit3d
+0,1,0,0.1904,gnn
+1,1,1,0.1953,gnn
+2,1,0,0.0373,gnn
+0,2,2,-0.0594,gnn
+1,2,2,-0.005,gnn
+2,2,1,-0.0105,gnn
+0,3,1,-0.2622,gnn
+1,3,0,-0.1793,gnn
+2,3,2,-0.0148,gnn
+
+```
+
+# reports/infer/gnn/top3_gnn.csv
+
+```csv
+sample_idx,top1_idx,top1_score,top1_text,top2_idx,top2_score,top2_text,top3_idx,top3_score,top3_text
+0,0,0.1904,a dog on grass,2,-0.0594,a mountain scene,1,-0.2622,a red car
+1,1,0.1953,a red car,2,-0.0050,a mountain scene,0,-0.1793,a dog on grass
+2,0,0.0373,a dog on grass,1,-0.0105,a red car,2,-0.0148,a mountain scene
+
+```
+
+# reports/infer/gnn/Z_gnn.npy
+
+This is a binary file of the type: Binary
+
+# reports/infer/mlp/top3_mlp.csv
+
+```csv
+sample_idx,top1_idx,top1_score,top1_text,top2_idx,top2_score,top2_text,top3_idx,top3_score,top3_text
+0,0,0.2655,a dog on grass,2,-0.0301,a mountain scene,1,-0.2524,a red car
+1,1,0.1849,a red car,2,-0.0235,a mountain scene,0,-0.2128,a dog on grass
+2,0,0.0769,a dog on grass,2,-0.0056,a mountain scene,1,-0.0695,a red car
+
+```
+
+# reports/infer/mlp/Z_mlp.npy
+
+This is a binary file of the type: Binary
+
+# reports/infer/vit3d/top3_vit3d.csv
+
+```csv
+sample_idx,top1_idx,top1_score,top1_text,top2_idx,top2_score,top2_text,top3_idx,top3_score,top3_text
+0,1,0.0521,a red car,0,0.0162,a dog on grass,2,-0.0921,a mountain scene
+1,1,0.2328,a red car,0,-0.0182,a dog on grass,2,-0.1525,a mountain scene
+2,0,-0.1062,a dog on grass,2,-0.1279,a mountain scene,1,-0.2722,a red car
+
+```
+
+# reports/infer/vit3d/Z_vit3d.npy
+
+This is a binary file of the type: Binary
 
 # src/fmri2image.egg-info/dependency_links.txt
 
@@ -6012,6 +12578,13 @@ class LoRALinear(nn.Module):
 
 ```
 
+# src/fmri2image/losses/__init__.py
+
+```py
+from .clip_losses import ClipStyleContrastiveLoss  # noqa: F40
+from .cca import DeepCCALoss  # noqa: F40
+```
+
 # src/fmri2image/losses/cca.py
 
 ```py
@@ -6060,6 +12633,140 @@ class DeepCCALoss(nn.Module):
 
         loss = -corr_mean
         return {"loss": loss, "corr_sum": corr_mean}
+
+```
+
+# src/fmri2image/losses/clip_losses.py
+
+```py
+# src/fmri2image/losses/clip_losses.py
+from __future__ import annotations
+
+import numpy as np
+import torch
+import torch.nn as nn
+
+__all__ = ["ClipStyleContrastiveLoss"]
+
+class ClipStyleContrastiveLoss(nn.Module):
+    """
+    CLIP-style InfoNCE cu temperatură învățabilă (logit_scale).
+    Folosește negative in-batch. Opțional simetric (z->t și t->z).
+    Returnează și logits pentru a calcula metrice de retrieval.
+    """
+    def __init__(self, temperature_init: float = 0.07, symmetric: bool = True):
+        super().__init__()
+        # în CLIP se învață logit_scale ~ log(1/T)
+        self.logit_scale = nn.Parameter(
+            torch.tensor(float(np.log(1.0 / float(temperature_init))), dtype=torch.float32)
+        )
+        self.symmetric = bool(symmetric)
+
+    def forward(self, z: torch.Tensor, t: torch.Tensor) -> dict:
+        """
+        Args:
+            z: [B, D] – proiecția din fMRI
+            t: [B, D] – embedding-uri CLIP text (sau imagine) corespunzătoare
+        Returns:
+            dict(loss=..., logits_zt=..., logits_tz|None=..., temp=...)
+        """
+        # normalizăm (siguranță, chiar dacă t e deja unit-norm)
+        z = z / (z.norm(dim=-1, keepdim=True) + 1e-8)
+        t = t / (t.norm(dim=-1, keepdim=True) + 1e-8)
+
+        # temperatură: scale = exp(logit_scale)
+        logit_scale = self.logit_scale.clamp(-5.0, 8.0)  # stabilitate numerică
+        scale = torch.exp(logit_scale)
+
+        # similarități (cosine; pentru că e unit norm) * scale
+        # logits_zt: rând i = query z_i, coloana j = key t_j
+        logits_zt = (z @ t.t()) * scale  # [B, B]
+        target = torch.arange(z.size(0), device=z.device)
+        loss_zt = nn.functional.cross_entropy(logits_zt, target)
+
+        if self.symmetric:
+            logits_tz = (t @ z.t()) * scale  # [B, B]
+            loss_tz = nn.functional.cross_entropy(logits_tz, target)
+            loss = 0.5 * (loss_zt + loss_tz)
+        else:
+            logits_tz = None
+            loss = loss_zt
+
+        # raportăm temperatura (nu scale) pentru logging
+        temp = torch.exp(-logit_scale)
+        return {"loss": loss, "logits_zt": logits_zt, "logits_tz": logits_tz, "temp": temp}
+
+```
+
+# src/fmri2image/models/baseline_module.py
+
+```py
+import torch
+import pytorch_lightning as pl
+import torch.nn as nn
+import torch.optim as optim
+from omegaconf import DictConfig
+import numpy as np
+
+from fmri2image.models.encoders.mlp_encoder import FMRIEncoderMLP
+from fmri2image.losses.clip_losses import ClipStyleContrastiveLoss
+from fmri2image.losses.cca import DeepCCALoss
+
+
+class BaselineModule(pl.LightningModule):
+    def __init__(self, cfg: DictConfig, clip_text_feats: np.ndarray = None):
+        super().__init__()
+        m = cfg.train.model
+
+        # Encoder simplu (MLP, dar poate fi extins cu vit3d/gnn)
+        self.encoder = FMRIEncoderMLP(m.fmri_input_dim, m.latent_dim, m.hidden)
+
+        # Loss principal (contrastive + opțional Deep CCA)
+        self.criterion = ClipStyleContrastiveLoss(
+            temperature_init=cfg.train.loss.temperature_init,
+            symmetric=cfg.train.loss.symmetric,
+        )
+
+        self.cca = None
+        if cfg.train.cca.enabled:
+            self.cca = DeepCCALoss(proj_dim=cfg.train.cca.proj_dim)
+
+        # Dacă avem embeddings CLIP salvate, le punem ca buffer
+        if clip_text_feats is not None:
+            self.register_buffer(
+                "clip_text_feats",
+                torch.tensor(clip_text_feats, dtype=torch.float32),
+                persistent=False,
+            )
+
+        self.save_hyperparameters()
+
+    def training_step(self, batch, _):
+        x, (idx, _texts) = batch
+        z = self.encoder(x)
+        text_emb = self.clip_text_feats.index_select(0, idx)
+        out = self.criterion(z, text_emb)
+        if self.cca is not None:
+            out["loss"] += self.cca(z, text_emb) * self.hparams["cfg"].train.loss.weights.cca
+
+        bs = x.size(0)
+        self.log("train/loss", out["loss"], prog_bar=True, on_step=True, on_epoch=True, batch_size=bs)
+        self.log("train/temp", out["temp"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
+        return out["loss"]
+
+    def validation_step(self, batch, _):
+        x, (idx, _texts) = batch
+        z = self.encoder(x)
+        text_emb = self.clip_text_feats.index_select(0, idx)
+        out = self.criterion(z, text_emb)
+
+        bs = x.size(0)
+        self.log("val/loss", out["loss"], prog_bar=True, on_step=False, on_epoch=True, batch_size=bs)
+        self.log("val/temp", out["temp"], prog_bar=False, on_step=False, on_epoch=True, batch_size=bs)
+        return out["loss"]
+
+    def configure_optimizers(self):
+        return optim.Adam(self.parameters(), lr=self.hparams["cfg"].train.optimizer.lr)
 
 ```
 
@@ -6202,6 +12909,15 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
+
+try:
+    from pytorch_lightning.profilers import AdvancedProfiler  # PL >= 2.0
+except Exception:  # pragma: no cover
+    try:
+        from pytorch_lightning.profiler import AdvancedProfiler  # PL 1.x
+    except Exception:
+        AdvancedProfiler = None  # fallback if profiler isn't available
 
 from ..models.encoders.mlp_encoder import FMRIEncoderMLP
 from ..models.encoders.vit3d_encoder import ViT3DEncoderLite
@@ -6362,7 +13078,7 @@ class LitModule(pl.LightningModule):
 
         # --- Optional Deep CCA (auxiliary) ---
         if self.use_cca and self.w_cca > 0:
-            cca_out = self.cca(z.detach(), t.detach())  # keep it auxiliary; no grad through encoder
+            cca_out = self.cca(z.detach(), t.detach())  # auxiliary; no grad through encoder
             loss_total = loss_total + self.w_cca * cca_out["loss"]
         else:
             cca_out = None
@@ -6377,8 +13093,7 @@ class LitModule(pl.LightningModule):
 
         # --- Retrieval metrics within-batch (ranking unaffected by temperature) ---
         with torch.no_grad():
-            # remove temperature for ranking
-            sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)
+            sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)  # remove scale for ranking
             m_zt = topk_retrieval(sim_zt, self.topk)
             for k, v in m_zt.items():
                 self.log(f"train/retrieval_zt_{k}", v, prog_bar=True, on_step=False, on_epoch=True, batch_size=bs)
@@ -6424,7 +13139,7 @@ def run_baseline(cfg: DictConfig):
         print(f"[pretrain] loaded encoder weights from {pre_ckpt} "
               f"(missing={len(missing)}, unexpected={len(unexpected)})")
 
-    # Optional: logger (W&B disabled by default in your config)
+    # Optional: W&B logger (disabled by default)
     logger = False
     try:
         if getattr(cfg.wandb, "enabled", False):
@@ -6437,14 +13152,59 @@ def run_baseline(cfg: DictConfig):
     except Exception:
         logger = False
 
+    # Fallback to CSVLogger (writes outputs/<date>/<run.name>/metrics.csv)
+    if logger is False:
+        from pytorch_lightning.loggers import CSVLogger
+        from pathlib import Path
+        Path("outputs").mkdir(parents=True, exist_ok=True)
+        logger = CSVLogger(save_dir="outputs", name=cfg.run.name)
+
+    # Optional profiler (enable with train.profile=true)
+    profiler = None
+    if bool(getattr(getattr(cfg, "train", {}), "profile", False)) and AdvancedProfiler is not None:
+        from pathlib import Path
+        Path("reports").mkdir(parents=True, exist_ok=True)
+        profiler = AdvancedProfiler(dirpath="reports", filename="profile.txt")
+
+    callbacks = []
+    enable_ckpt = bool(getattr(cfg.train, "checkpointing", False))
+    ckpt_dir = None
+    if enable_ckpt:
+        ckpt_dir = os.path.join(cfg.run.output_dir, "checkpoints")
+        os.makedirs(ckpt_dir, exist_ok=True)
+        ckpt_cb = ModelCheckpoint(
+            dirpath=ckpt_dir,
+            save_last=True,
+            save_top_k=1,
+            monitor="train/loss_epoch",
+            mode="min",
+            filename="epoch{epoch:02d}-step{step}",
+            auto_insert_metric_name=False,
+            every_n_train_steps=1,          
+            save_on_train_epoch_end=True,   
+        )
+        callbacks.append(ckpt_cb)
+
     trainer = pl.Trainer(
         max_epochs=cfg.train.max_epochs,
         precision=cfg.train.precision,
         default_root_dir=cfg.run.output_dir,
-        enable_checkpointing=False,
+        enable_checkpointing=enable_ckpt,
+        callbacks=callbacks if callbacks else None,
         logger=logger,
+        log_every_n_steps=int(getattr(cfg.train, "log_every_n_steps", 50)),
+        profiler=profiler,
     )
+
     trainer.fit(model, dl)
+
+    if enable_ckpt and ckpt_dir is not None:
+        last_path = os.path.join(ckpt_dir, "last.ckpt")
+        try:
+            trainer.save_checkpoint(last_path)
+            print(f"[ckpt] saved last checkpoint -> {last_path}")
+        except Exception as e:
+            print(f"[ckpt] WARN: could not save last.ckpt: {e}")
 
 ```
 
@@ -6679,6 +13439,664 @@ def test_cli_smoke():
 
 ```
 
+# tools/archive_ckpts.sh
+
+```sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+DAY="$(date +%Y-%m-%d)"
+SRC_ROOT="outputs/${DAY}"
+DST_ROOT="data/artifacts/ckpts/${DAY}"
+
+mkdir -p "${DST_ROOT}"
+
+declare -A MAP=(
+  [abl_mlp_ckpt]=mlp_last.ckpt
+  [abl_vit3d_ckpt]=vit3d_last.ckpt
+  [abl_gnn_ckpt]=gnn_last.ckpt
+)
+
+for RUN in "${!MAP[@]}"; do
+  SRC="${SRC_ROOT}/${RUN}/checkpoints/last.ckpt"
+  if [[ -f "${SRC}" ]]; then
+    cp -f "${SRC}" "${DST_ROOT}/${MAP[$RUN]}"
+    dvc add "${DST_ROOT}/${MAP[$RUN]}"
+  else
+    echo "[warn] missing ${SRC} – skipping"
+  fi
+done
+
+echo "[ok] archived to ${DST_ROOT}"
+
+```
+
+# tools/compare_infer.py
+
+```py
+#!/usr/bin/env python3
+import argparse
+import re
+import pandas as pd
+from pathlib import Path
+
+def _norm_cols(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df.columns = [c.strip().lower().replace(" ", "").replace("-", "_") for c in df.columns]
+    return df
+
+def _find_pairs(cols):
+    """
+    Return dict: suffix -> {"idx": colname or None, "score": colname or None}
+    Accepts forms like: idx0, score0, top1_idx, top1_score, rank2_idx, rank2_score, etc.
+    """
+    pairs = {}
+    for c in cols:
+        # try to detect IDX with a numeric suffix somewhere
+        m_idx = re.search(r'(?:^|_)(?:text)?idx(\d+)$', c)
+        if not m_idx:
+            m_idx = re.search(r'(?:^|_)(?:top|rank)?(\d+)_?(?:text)?idx$', c)
+        if m_idx:
+            suf = m_idx.group(1)
+            pairs.setdefault(suf, {})["idx"] = c
+            continue
+
+        # detect SCORE with numeric suffix
+        m_sc = re.search(r'(?:^|_)score(\d+)$', c)
+        if not m_sc:
+            m_sc = re.search(r'(?:^|_)(?:top|rank)?(\d+)_?score$', c)
+        if m_sc:
+            suf = m_sc.group(1)
+            pairs.setdefault(suf, {})["score"] = c
+            continue
+    return pairs
+
+def read_infer_csv(path: Path, encoder_name: str) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    df = _norm_cols(df)
+    df["encoder"] = encoder_name
+
+    # Already long?
+    if {"sample", "rank", "text_idx", "score"}.issubset(df.columns):
+        return df[["sample", "rank", "text_idx", "score", "encoder"]].copy()
+
+    # Try to coerce wide -> long by pairing *_idx / *_score columns
+    if "sample" not in df.columns:
+        # If no explicit 'sample', fabricate one by row index
+        df = df.reset_index(drop=False).rename(columns={"index": "sample"})
+
+    pairs = _find_pairs(df.columns)
+    if not pairs:
+        raise ValueError(f"Unrecognized schema in {path} (no idx/score pairs found)")
+
+    rows = []
+    for suf, d in pairs.items():
+        idx_col = d.get("idx", None)
+        sc_col  = d.get("score", None)
+        if idx_col is None or sc_col is None:
+            # skip incomplete pair
+            continue
+        tmp = df[["sample", idx_col, sc_col, "encoder"]].copy()
+        tmp = tmp.rename(columns={idx_col: "text_idx", sc_col: "score"})
+        # rank is 1-based if suffix starts at '1', else make it +1 from int
+        try:
+            rank_val = int(suf)
+            if rank_val == 0:
+                rank_val = 1
+        except Exception:
+            rank_val = None
+        tmp["rank"] = rank_val
+        rows.append(tmp)
+
+    if not rows:
+        raise ValueError(f"Unrecognized schema in {path} (found pairs but none usable)")
+
+    out = pd.concat(rows, ignore_index=True)
+    # If some ranks are None, sort by score desc per sample and assign ranks
+    if out["rank"].isna().any():
+        out = out.sort_values(["sample", "score"], ascending=[True, False])
+        out["rank"] = out.groupby("sample").cumcount() + 1
+
+    # ensure int types where possible
+    out["rank"] = out["rank"].astype(int)
+    out["text_idx"] = out["text_idx"].astype(int, errors="ignore")
+    return out[["sample", "rank", "text_idx", "score", "encoder"]]
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--mlp_csv",   type=str, required=True)
+    ap.add_argument("--vit3d_csv", type=str, required=True)
+    ap.add_argument("--gnn_csv",   type=str, required=True)
+    ap.add_argument("--out_csv",   type=str, required=True)
+    args = ap.parse_args()
+
+    mlp   = read_infer_csv(Path(args.mlp_csv),   "mlp")
+    vit3d = read_infer_csv(Path(args.vit3d_csv), "vit3d")
+    gnn   = read_infer_csv(Path(args.gnn_csv),   "gnn")
+
+    merged = pd.concat([mlp, vit3d, gnn], ignore_index=True)
+    Path(args.out_csv).parent.mkdir(parents=True, exist_ok=True)
+    merged.to_csv(args.out_csv, index=False)
+    print(f"[ok] wrote {args.out_csv}")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+# tools/eval.py
+
+```py
+# tools/eval.py
+import os
+import math
+import numpy as np
+import torch
+from torch.utils.data import DataLoader, Dataset
+from omegaconf import OmegaConf, DictConfig
+from hydra import main as hydra_main
+
+# Modelul Lightning folosit la train
+from fmri2image.pipelines.baseline_train import LitModule
+from fmri2image.data.nsd_reader import NSDReader
+
+# ===== Dataset simplu de evaluare (identic cu train, dar fără drop_last/shuffle) =====
+class FMRITextDataset(Dataset):
+    def __init__(self, X, texts):
+        self.X = X
+        self.texts = texts
+
+    def __len__(self):
+        return len(self.texts)
+
+    def __getitem__(self, idx):
+        x = torch.tensor(self.X[idx], dtype=torch.float32)
+        return x, (torch.tensor(idx, dtype=torch.long), self.texts[idx])
+
+
+def topk_retrieval(sim: torch.Tensor, topk=(1, 5)):
+    """
+    sim: [N, N] cosine similarity (z @ t^T) between predicted fmri latents (rows) and text latents (cols)
+    target = diagonal index
+    """
+    N = sim.size(0)
+    device = sim.device
+    target = torch.arange(N, device=device)
+    out = {}
+    for k in topk:
+        kk = min(k, N)
+        _, idxs = sim.topk(kk, dim=1, largest=True)
+        correct = (idxs == target.view(-1, 1)).any(dim=1).float().mean()
+        out[f"top{kk}"] = correct.item()
+    return out
+
+
+def _load_ckpt(model: torch.nn.Module, ckpt_path: str):
+    ckpt = torch.load(ckpt_path, map_location="cpu")
+    state = ckpt.get("state_dict", ckpt)
+
+    # Dacă cheile sunt prefixate cu "model."/"module." etc, încearcă să potrivim automat
+    model_keys = set(model.state_dict().keys())
+    filtered = {}
+    for k, v in state.items():
+        kk = k
+        if kk.startswith("model."):
+            kk = kk[len("model.") :]
+        if kk.startswith("encoder.") or kk.startswith("criterion.") or kk.startswith("cca."):
+            # lăsăm așa, modelul Lightning are aceleași submodule
+            pass
+        # adaugă dacă e cheie validă
+        if kk in model_keys:
+            filtered[kk] = v
+
+    missing, unexpected = model.load_state_dict(filtered, strict=False)
+    print(f"[eval] loaded checkpoint: {ckpt_path} (missing={len(missing)}, unexpected={len(unexpected)})")
+
+
+@hydra_main(version_base=None, config_path="../configs", config_name="config")
+def main(cfg: DictConfig):
+    # Asigură-te că avem secțiunile necesare (fallback-uri safe)
+    cfg = OmegaConf.merge(
+        OmegaConf.create(
+            {
+                "train": {"batch_size": 2, "num_workers": 0, "model": {"fmri_input_dim": 2048}},
+                "eval": {"topk": [1, 5], "checkpoint": ""},
+                "paths": {
+                    "data_dir": "./data",
+                    "raw_dir": "./data/raw",
+                    "proc_dir": "./data/processed",
+                    "artifacts_dir": "./data/artifacts",
+                },
+                "data": {
+                    "paths": {
+                        "images_root": "./data/raw/nsd/images",
+                        "fmri_root": "./data/raw/nsd/fmri",
+                        "captions": "./data/raw/nsd/captions.csv",
+                    },
+                    "roi": {"out_dir": "./data/processed/nsd/roi"},
+                    "subjects": ["subj01"],
+                },
+            }
+        ),
+        cfg,
+    )
+
+    # ---- 1) Încarcă datele + CLIP text feats ----
+    reader = NSDReader(
+        cfg.data.paths.images_root,
+        cfg.data.paths.fmri_root,
+        cfg.data.paths.captions,
+        roi_dir=cfg.data.roi.out_dir,
+        subject=cfg.data.subjects[0] if cfg.data.get("subjects") else "subj01",
+    )
+    # Folosim același subset ca la train demo (poți crește n)
+    X, texts = reader.load(n=64, fmri_dim=cfg.train.model.fmri_input_dim)
+
+    clip_feats = np.load(os.path.join(cfg.paths.proc_dir, "nsd", "clip_text.npy"))
+    n = min(len(X), len(clip_feats))
+    X, texts, clip_feats = X[:n], texts[:n], clip_feats[:n]
+
+    ds = FMRITextDataset(X, texts)
+    # la evaluare: fără shuffle, fără drop_last
+    dl = DataLoader(
+        ds,
+        batch_size=cfg.train.batch_size,
+        shuffle=False,
+        num_workers=cfg.train.num_workers,
+        pin_memory=True,
+        persistent_workers=bool(cfg.train.num_workers > 0),
+        drop_last=False,
+    )
+
+    # ---- 2) Construiește modelul și încarcă checkpoint-ul ----
+    model = LitModule(cfg, clip_feats)
+    ckpt_path = cfg.eval.checkpoint
+    if not ckpt_path or not os.path.exists(ckpt_path):
+        raise FileNotFoundError(
+            f"Nu găsesc checkpoint-ul: '{ckpt_path}'. Dă-mi calea corectă prin "
+            f"`eval.checkpoint=...` sau rulează un train cu checkpointing activat."
+        )
+    _load_ckpt(model, ckpt_path)
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
+    # ---- 3) Encodează toate eșantioanele, calculează retrieval top-k pe setul complet ----
+    with torch.no_grad():
+        all_z = []
+        all_t = []
+        for x, (idx, _) in dl:
+            x = x.to(device)
+            idx = idx.to(device).long()
+            z = model.encoder(x)  # [B, D]
+            t = model.clip_text_feats.index_select(0, idx)  # [B, D]
+            # normalize (ca în train)
+            z = z / (z.norm(dim=-1, keepdim=True) + 1e-8)
+            t = t / (t.norm(dim=-1, keepdim=True) + 1e-8)
+            all_z.append(z)
+            all_t.append(t)
+
+        Z = torch.cat(all_z, dim=0)  # [N, D]
+        T = torch.cat(all_t, dim=0)  # [N, D]
+        sim = Z @ T.t()              # cosine (unit-norm)
+        metrics = topk_retrieval(sim, tuple(cfg.eval.topk))
+
+    # ---- 4) Afișează rezultatele ----
+    print("\n=== Retrieval metrics (full set) ===")
+    for k, v in metrics.items():
+        print(f"{k}: {v:.3f}")
+
+    # (opțional) salvează un fișier cu rezultate
+    out_dir = os.path.join("reports", "eval")
+    os.makedirs(out_dir, exist_ok=True)
+    out_txt = os.path.join(out_dir, "retrieval.txt")
+    with open(out_txt, "w") as f:
+        for k, v in metrics.items():
+            f.write(f"{k}: {v:.6f}\n")
+    print(f"\n[eval] Am scris rezultatele în: {out_txt}")
+
+
+if __name__ == "__main__":
+    main()
+
+```
+
+# tools/hpo_optuna.py
+
+```py
+import optuna
+import numpy as np
+import pytorch_lightning as pl
+from omegaconf import OmegaConf
+from fmri2image.pipelines.baseline_train import LitModule
+from fmri2image.data.nsd_reader import NSDReader
+from fmri2image.data.datamodule import make_loaders
+
+def objective(trial: optuna.Trial) -> float:
+    # --- Search space ---
+    lr = trial.suggest_loguniform("lr", 1e-5, 1e-2)
+    temp_init = trial.suggest_float("temperature_init", 0.01, 0.2)
+    cca_weight = trial.suggest_float("cca_weight", 0.0, 0.2)
+    latent_dim = trial.suggest_categorical("latent_dim", [512, 768, 1024])
+
+    # --- Load and mutate config ---
+    cfg = OmegaConf.load("configs/train/baseline.yaml")
+    cfg.train.optimizer.lr = lr
+    cfg.train.loss.temperature_init = temp_init
+    cfg.train.loss.weights.cca = cca_weight
+    cfg.train.model.latent_dim = latent_dim
+    cfg.run.name = f"hpo_lr{lr:.2e}_t{temp_init:.2f}_cca{cca_weight:.2f}_d{latent_dim}"
+
+    # --- Data ---
+    reader = NSDReader(
+        cfg.data.paths.images_root,
+        cfg.data.paths.fmri_root,
+        cfg.data.paths.captions,
+        roi_dir=cfg.data.roi.out_dir,
+        subject="subj01",
+    )
+    X, texts = reader.load(n=128, fmri_dim=cfg.train.model.fmri_input_dim)
+    clip_feats = np.load("data/processed/nsd/clip_text.npy")
+    n = min(len(X), len(clip_feats))
+    X, texts, clip_feats = X[:n], texts[:n], clip_feats[:n]
+    dl = make_loaders(X, texts, batch_size=cfg.train.batch_size, num_workers=cfg.train.num_workers)
+
+    # --- Model & Trainer ---
+    model = LitModule(cfg, clip_feats)
+    trainer = pl.Trainer(max_epochs=1, logger=False, enable_checkpointing=False)
+    trainer.fit(model, dl)
+
+    # maximize retrieval@5
+    return float(trainer.callback_metrics.get("train/retrieval_zt_top5", 0.0))
+
+def main():
+    study = optuna.create_study(direction="maximize", study_name="fmri2image_hpo")
+    study.optimize(objective, n_trials=10)
+    print("Best params:", study.best_params)
+    print("Best value:", study.best_value)
+
+if __name__ == "__main__":
+    main()
+
+```
+
+# tools/infer.py
+
+```py
+# tools/infer.py
+import argparse
+import os
+from pathlib import Path
+import csv
+import numpy as np
+import torch
+from omegaconf import OmegaConf
+
+# Reuse encoder builders and small utilities from the training pipeline
+from fmri2image.pipelines.baseline_train import build_encoder
+from fmri2image.data.nsd_reader import NSDReader
+
+
+def build_min_cfg(encoder: str,
+                  fmri_input_dim: int,
+                  latent_dim: int,
+                  hidden=(2048, 1024, 768),
+                  vit3d_cfg=None,
+                  gnn_cfg=None):
+    """
+    Build a minimal OmegaConf cfg object compatible with `build_encoder`.
+    """
+    vit3d_cfg = vit3d_cfg or {"time_steps": 8, "depth": 2, "heads": 4, "mlp_ratio": 2.0, "dropout": 0.1}
+    gnn_cfg = gnn_cfg or {"dropout": 0.1, "use_identity_adj": True}
+    cfg = OmegaConf.create({
+        "train": {
+            "encoder": encoder,
+            "model": {
+                "fmri_input_dim": int(fmri_input_dim),
+                "latent_dim": int(latent_dim),
+                "hidden": list(hidden),
+            },
+            "vit3d": vit3d_cfg,
+            "gnn": gnn_cfg,
+        }
+    })
+    return cfg
+
+
+def load_from_nsd(n: int,
+                  fmri_dim: int | None = None,
+                  subject: str = "subj01",
+                  images_root: str = "data/raw/nsd/images",
+                  fmri_root: str = "data/raw/nsd/fmri",
+                  captions_csv: str = "data/raw/nsd/captions.csv",
+                  roi_dir: str = "data/processed/nsd/roi",
+                  clip_text_path: str = "data/processed/nsd/clip_text.npy"):
+    """
+    Load a quick subset from the NSD mock pipeline (same reader used for training demos).
+    """
+    reader = NSDReader(images_root, fmri_root, captions_csv, roi_dir=roi_dir, subject=subject)
+    X, texts = reader.load(n=n, fmri_dim=fmri_dim)
+    clip_feats = np.load(clip_text_path)
+    # Align just in case
+    m = min(len(X), len(clip_feats))
+    return X[:m], texts[:m], clip_feats[:m]
+
+
+def load_from_npy(x_path: str, clip_path: str, texts_csv: str | None):
+    """
+    Load fMRI features (X) and CLIP text features from .npy files.
+    Optionally, load human-readable texts from a CSV with columns: idx,text
+    """
+    X = np.load(x_path)
+    clip_feats = np.load(clip_path)
+    texts = None
+    if texts_csv and os.path.exists(texts_csv):
+        idx_to_text = {}
+        import pandas as pd
+        df = pd.read_csv(texts_csv)
+        # Expect columns: idx,text (idx must match the row order of clip embeddings)
+        for _, row in df.iterrows():
+            idx_to_text[int(row["idx"])] = str(row["text"])
+        # Build texts list aligned to clip_feats indices
+        texts = [idx_to_text.get(i, f"text_{i}") for i in range(len(clip_feats))]
+    else:
+        texts = [f"text_{i}" for i in range(len(clip_feats))]
+
+    m = min(len(X), len(clip_feats))
+    return X[:m], texts[:m], clip_feats[:m]
+
+
+def topk_for_each_row(sim: torch.Tensor, k: int = 3):
+    """
+    sim: [N, M] similarity matrix (fMRI rows vs text columns)
+    Returns list of tuples: [(indices, scores), ...] for each row.
+    """
+    k = min(k, sim.size(1))
+    vals, idxs = torch.topk(sim, k=k, dim=1)
+    return idxs.cpu().numpy(), vals.cpu().numpy()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Run inference: fMRI -> latent, compute text retrieval top-k.")
+    parser.add_argument("--checkpoint", required=True, type=str, help="Path to Lightning checkpoint (last.ckpt).")
+    parser.add_argument("--encoder", type=str, default=None, choices=["mlp", "vit3d", "gnn"],
+                        help="Encoder type. If omitted, will try to read from the checkpoint hyper_parameters.")
+    parser.add_argument("--mode", type=str, default="nsd", choices=["nsd", "npy"],
+                        help="Data source: 'nsd' quick subset or 'npy' arbitrary arrays.")
+    parser.add_argument("--n", type=int, default=32, help="How many samples to load when mode=nsd.")
+    parser.add_argument("--x", type=str, default=None, help="Path to X.npy (when mode=npy).")
+    parser.add_argument("--clip", type=str, default=None, help="Path to clip_text.npy (when mode=npy).")
+    parser.add_argument("--texts_csv", type=str, default=None, help="Optional CSV with columns: idx,text (when mode=npy).")
+    parser.add_argument("--out_dir", type=str, default="reports/infer", help="Output directory for CSV artifacts.")
+    parser.add_argument("--k", type=int, default=3, help="Top-k to report.")
+    args = parser.parse_args()
+
+    # ---- Load data ----
+    if args.mode == "nsd":
+        X, texts, clip_feats = load_from_nsd(n=args.n, fmri_dim=None)
+    else:
+        if not (args.x and args.clip):
+            raise ValueError("When mode=npy, you must provide --x and --clip paths.")
+        X, texts, clip_feats = load_from_npy(args.x, args.clip, args.texts_csv)
+
+    fmri_dim = X.shape[1]
+    latent_dim = clip_feats.shape[1]
+
+    # ---- Determine encoder type from checkpoint hyperparameters if not provided ----
+    enc_type = args.encoder
+    ckpt = torch.load(args.checkpoint, map_location="cpu")
+    hparams = ckpt.get("hyper_parameters", {})
+    if enc_type is None:
+        # best effort: try to dig out train.encoder from the saved cfg
+        try:
+            enc_type = str(hparams["cfg"]["train"]["encoder"])
+        except Exception:
+            enc_type = "mlp"  # fallback
+
+    # ---- Build encoder with a minimal cfg and load weights from the checkpoint's state_dict ----
+    cfg = build_min_cfg(encoder=enc_type, fmri_input_dim=fmri_dim, latent_dim=latent_dim)
+    encoder = build_encoder(cfg, out_dim=latent_dim)
+
+    # Extract only the encoder.* weights from Lightning state_dict and load into the bare encoder
+    state = ckpt.get("state_dict", ckpt)
+    enc_state = {k.replace("encoder.", "", 1): v for k, v in state.items() if k.startswith("encoder.")}
+    missing, unexpected = encoder.load_state_dict(enc_state, strict=False)
+    print(f"[load] encoder weights loaded (missing={len(missing)}, unexpected={len(unexpected)})")
+
+    # ---- Forward & similarities ----
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    encoder.to(device).eval()
+
+    with torch.no_grad():
+        X_t = torch.tensor(X, dtype=torch.float32, device=device)
+        Z = encoder(X_t)  # [N, D]
+        # Normalize for cosine similarity
+        Z = Z / (Z.norm(dim=-1, keepdim=True) + 1e-8)
+        T = torch.tensor(clip_feats, dtype=torch.float32, device=device)
+        T = T / (T.norm(dim=-1, keepdim=True) + 1e-8)
+        sim = Z @ T.t()  # [N, M]
+        idxs, vals = topk_for_each_row(sim, k=args.k)
+
+    # ---- Save results ----
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save top-k as CSV
+    csv_path = out_dir / f"top{args.k}_{enc_type}.csv"
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        header = ["sample_idx"]
+        for i in range(args.k):
+            header += [f"top{i+1}_idx", f"top{i+1}_score", f"top{i+1}_text"]
+        writer.writerow(header)
+
+        for i in range(idxs.shape[0]):
+            row = [i]
+            for j in range(idxs.shape[1]):
+                idx = int(idxs[i, j])
+                score = float(vals[i, j])
+                text_str = texts[idx] if 0 <= idx < len(texts) else ""
+                row += [idx, f"{score:.4f}", text_str]
+            writer.writerow(row)
+
+    # Save latent predictions as .npy (optional, often useful downstream)
+    np.save(out_dir / f"Z_{enc_type}.npy", Z.cpu().numpy())
+
+    # Print a short preview for the first 5 samples
+    print(f"[infer] wrote {csv_path}")
+    for i in range(min(5, idxs.shape[0])):
+        tops = []
+        for j in range(idxs.shape[1]):
+            tops.append(f"({idxs[i, j]}: {vals[i, j]:.3f})")
+        print(f"sample {i}: top{args.k} -> " + ", ".join(tops))
+
+
+if __name__ == "__main__":
+    main()
+
+```
+
+# tools/plot_metrics.py
+
+```py
+import pandas as pd
+import matplotlib.pyplot as plt
+import sys
+from pathlib import Path
+
+def plot_metrics(log_dir):
+    metrics_file = Path(log_dir) / "metrics.csv"
+    if not metrics_file.exists():
+        print(f"No metrics found at {metrics_file}")
+        return
+
+    df = pd.read_csv(metrics_file)
+    # păstrează doar coloane utile
+    cols = [c for c in df.columns if "train" in c or "val" in c]
+    df = df[["step"] + cols]
+
+    df.plot(x="step", y=[c for c in cols if "loss" in c], title="Loss")
+    plt.show()
+
+    if any("retrieval" in c for c in cols):
+        df.plot(x="step", y=[c for c in cols if "retrieval" in c], title="Top-k Retrieval")
+        plt.show()
+
+
+if __name__ == "__main__":
+    log_dir = sys.argv[1] if len(sys.argv) > 1 else "outputs"
+    plot_metrics(log_dir)
+
+```
+
+# tools/report_results.py
+
+```py
+import csv
+import glob
+from pathlib import Path
+
+def last_row_of_csv(path):
+    last = None
+    with open(path, "r") as f:
+        r = csv.DictReader(f)
+        for row in r:
+            last = row
+    return last or {}
+
+def main():
+    rows = []
+    for csv_path in glob.glob("outputs/**/metrics.csv", recursive=True):
+        row = last_row_of_csv(csv_path)
+        run_dir = Path(csv_path).parent
+        def to_float(x):
+            try:
+                return float(x)
+            except Exception:
+                return float("nan")
+        rows.append({
+            "run": str(run_dir),
+            "loss": to_float(row.get("train/loss_epoch")),
+            "top1": to_float(row.get("train/retrieval_zt_top1")),
+            "top5": to_float(row.get("train/retrieval_zt_top5")),
+            "temp": to_float(row.get("train/temp_epoch")),
+        })
+
+    rows.sort(key=lambda x: (-(x["top5"] if x["top5"]==x["top5"] else -1), x["loss"]))
+
+    print("| Run | Loss | Top@1 | Top@5 | Temp |")
+    print("|-----|------|-------|-------|------|")
+    for r in rows:
+        def fmt(v, nd=3):
+            return "nan" if v != v else f"{v:.{nd}f}"
+        print(f"| {r['run']} | {fmt(r['loss'])} | {fmt(r['top1'])} | {fmt(r['top5'])} | {fmt(r['temp'], 4)} |")
+
+if __name__ == "__main__":
+    Path("reports").mkdir(exist_ok=True, parents=True)
+    main()
+
+```
+
 # tools/run_ablations.py
 
 ```py
@@ -6843,6 +14261,73 @@ def main():
 
     print(f"\n[ABLATION] Summary saved to: {summary_path}")
 
+
+if __name__ == "__main__":
+    main()
+
+```
+
+# tools/show_topk_captions.py
+
+```py
+#!/usr/bin/env python3
+import argparse
+import pandas as pd
+from pathlib import Path
+from fmri2image.data.nsd_reader import NSDReader
+
+def load_texts(cfg_data_paths, roi_dir, subject, n, fmri_dim):
+    reader = NSDReader(
+        images_root=cfg_data_paths["images_root"],
+        fmri_root=cfg_data_paths["fmri_root"],
+        captions=cfg_data_paths["captions"],
+        roi_dir=roi_dir,
+        subject=subject,
+    )
+    # Load exactly n samples to keep indices consistent with infer.py default
+    X, texts = reader.load(n=n, fmri_dim=fmri_dim)
+    return texts
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--topk_csv", required=True, help="Path to merged or single encoder top-k CSV (long format)")
+    ap.add_argument("--encoder",  default=None,   help="Optional: filter by one encoder (mlp/vit3d/gnn)")
+    ap.add_argument("--n",        type=int, default=32, help="How many samples were used in infer.py (default 32)")
+    ap.add_argument("--fmri_dim", type=int, default=2048, help="ROI vector dim passed during training/infer")
+    ap.add_argument("--subject",  default="subj01")
+    # Hardcode your config paths (match your config)
+    ap.add_argument("--images_root", default="data/raw/nsd/images")
+    ap.add_argument("--fmri_root",   default="data/raw/nsd/fmri")
+    ap.add_argument("--captions",    default="data/raw/nsd/captions.csv")
+    ap.add_argument("--roi_dir",     default="data/processed/nsd/roi")
+    ap.add_argument("--head",        type=int, default=5, help="How many samples to display")
+    args = ap.parse_args()
+
+    # Load texts aligned with infer data
+    cfg_data_paths = {
+        "images_root": args.images_root,
+        "fmri_root": args.fmri_root,
+        "captions": args.captions,
+    }
+    texts = load_texts(cfg_data_paths, args.roi_dir, args.subject, n=args.n, fmri_dim=args.fmri_dim)
+
+    df = pd.read_csv(args.topk_csv)
+    if args.encoder:
+        df = df[df["encoder"] == args.encoder].copy()
+    # Expect long format: sample, rank, text_idx, score, encoder
+    if not {"sample", "rank", "text_idx", "score"}.issubset(df.columns):
+        raise ValueError("Expected columns [sample, rank, text_idx, score]")
+
+    # Print first N samples with captions for top-k
+    for s in sorted(df["sample"].unique())[:args.head]:
+        block = df[df["sample"] == s].sort_values(["rank"])
+        print(f"\n=== Sample {s} ({args.encoder or 'all encoders'}) ===")
+        for _, row in block.iterrows():
+            t_idx = int(row["text_idx"])
+            score = float(row["score"])
+            enc   = row["encoder"] if "encoder" in row else "enc"
+            cap = texts[t_idx] if 0 <= t_idx < len(texts) else "<out of range>"
+            print(f"[{enc}] rank {int(row['rank'])} -> text_idx={t_idx:>3d}, score={score:+.3f} :: {cap}")
 
 if __name__ == "__main__":
     main()
