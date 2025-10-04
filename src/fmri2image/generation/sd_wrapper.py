@@ -1,7 +1,7 @@
+# src/fmri2image/generation/sd_wrapper.py
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, List
-import types
 import torch
 
 
@@ -26,14 +26,12 @@ def _install_transformers_compat_shim():
     transformers versions don't accept. This shim strips unknown kwargs.
     """
     try:
-        import transformers
         from transformers.modeling_utils import PreTrainedModel
     except Exception:
         return  # transformers not available, nothing to do
 
     orig_from_pretrained = PreTrainedModel.from_pretrained
 
-    # Wrap classmethod while keeping it a classmethod
     def _from_pretrained_shim(cls, *args, **kwargs):
         # Strip kwargs that can appear from diffusers loaders in older stacks
         for k in (
@@ -45,7 +43,8 @@ def _install_transformers_compat_shim():
             "ignore_mismatched_sizes",
         ):
             kwargs.pop(k, None)
-        return orig_from_pretrained.__func__(cls, *args, **kwargs)  # call original function of classmethod
+        # Call the original classmethod function
+        return orig_from_pretrained.__func__(cls, *args, **kwargs)
 
     PreTrainedModel.from_pretrained = classmethod(_from_pretrained_shim)
 
@@ -61,8 +60,6 @@ class StableDiffusionGenerator:
 
     def __init__(self, cfg: SDConfig):
         self.cfg = cfg
-
-        # Install compatibility shim before any pipeline loads submodules
         _install_transformers_compat_shim()
 
         try:
@@ -90,15 +87,13 @@ class StableDiffusionGenerator:
         else:
             raise ValueError(f"Unknown SD model: {cfg.model}")
 
-        # Avoid version-mismatch paths: disable safety checker and low CPU mem mode.
-        # Use 'dtype' (newer arg) and keep 'torch_dtype' for older stacks via kwargs.
-        # We pass both safely; unknown arg will be ignored by our shim.
+        # Load pipeline with safer defaults for mixed stacks
         self.pipe = Pipe.from_pretrained(
             repo,
-            safety_checker=None,
+            safety_checker=None,     # NOTE: disabled; keep enabled for public apps
             feature_extractor=None,
-            low_cpu_mem_usage=False,  # critical: prevents offload paths
-            torch_dtype=torch_dtype,  # backward compat
+            low_cpu_mem_usage=False, # avoid offload paths incompatible with older transformers
+            torch_dtype=torch_dtype, # keep for older diffusers; newer also accept dtype
         )
 
         # Optional: swap scheduler if requested
@@ -110,39 +105,68 @@ class StableDiffusionGenerator:
             except Exception:
                 pass  # keep default if swap fails
 
-        # Move to device and make UI quiet
+        # Move to device & quiet progress
         self.pipe = self.pipe.to(cfg.device)
         try:
             self.pipe.set_progress_bar_config(disable=True)
         except Exception:
-            pass  # older diffusers may not have this
+            pass
 
     @torch.inference_mode()
     def generate(
         self,
-        prompts: List[str],
+        prompts: List[str] | str,
         seeds: Optional[List[int]] = None,
         height: Optional[int] = None,
         width: Optional[int] = None,
         guidance_scale: Optional[float] = None,
         num_inference_steps: Optional[int] = None,
-        negative_prompt: Optional[str] = None,
+        negative_prompt: Optional[str | List[str]] = None,
     ):
         """Generate images from text prompts."""
+        # --- Normalize prompts to a list ---
+        if isinstance(prompts, str):
+            prompt_list = [prompts]
+        else:
+            prompt_list = list(prompts)
+        batch_size = len(prompt_list)
+
+        # --- Normalize negative prompts to match type & length ---
+        neg_arg = negative_prompt if negative_prompt is not None else self.cfg.negative_prompt
+        if neg_arg is None or neg_arg == "":
+            neg_list: Optional[List[str]] = None
+        elif isinstance(neg_arg, str):
+            # broadcast single neg prompt to all batch items
+            neg_list = [neg_arg] * batch_size
+        else:
+            # received a list: ensure correct length
+            neg_list = list(neg_arg)
+            if len(neg_list) != batch_size:
+                # repeat or truncate to match batch_size
+                if len(neg_list) < batch_size:
+                    reps = (batch_size + len(neg_list) - 1) // len(neg_list)
+                    neg_list = (neg_list * reps)[:batch_size]
+                else:
+                    neg_list = neg_list[:batch_size]
+
+        # --- Seeds: per-image generators if provided ---
+        generator = None
+        if seeds is not None and len(seeds) > 0:
+            if len(seeds) != batch_size:
+                # repeat/truncate seeds to match batch_size
+                reps = (batch_size + len(seeds) - 1) // len(seeds)
+                seeds = (seeds * reps)[:batch_size]
+            generator = [torch.Generator(device=self.cfg.device).manual_seed(s) for s in seeds]
+
+        # --- Other params ---
         h = height or self.cfg.height
         w = width or self.cfg.width
         gs = self.cfg.guidance_scale if guidance_scale is None else guidance_scale
         steps = self.cfg.num_inference_steps if num_inference_steps is None else num_inference_steps
-        neg = negative_prompt if negative_prompt is not None else self.cfg.negative_prompt
-
-        # Per-image generators if seeds are provided
-        generator = None
-        if seeds is not None:
-            generator = [torch.Generator(device=self.cfg.device).manual_seed(s) for s in seeds]
 
         out = self.pipe(
-            prompt=prompts,
-            negative_prompt=neg if neg else None,
+            prompt=prompt_list,
+            negative_prompt=neg_list,          # list or None; matches prompt_list
             num_inference_steps=steps,
             guidance_scale=gs,
             height=h,
