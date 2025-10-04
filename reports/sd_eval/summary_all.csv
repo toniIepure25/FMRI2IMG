@@ -1,0 +1,25 @@
+image,sample,prompt,clip_score,encoder
+sample_000.png,0,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.2259123474359512,mlp
+sample_001.png,1,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.3479722142219543,mlp
+sample_002.png,2,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.245310977101326,mlp
+sample_003.png,3,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.3344263732433319,mlp
+sample_004.png,4,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.2886272668838501,mlp
+sample_005.png,5,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.3658499121665954,mlp
+sample_006.png,6,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.2608631253242492,mlp
+sample_007.png,7,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.4328891038894653,mlp
+sample_000.png,0,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.2259123474359512,vit3d
+sample_001.png,1,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.3479722142219543,vit3d
+sample_002.png,2,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.245310977101326,vit3d
+sample_003.png,3,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.3344263732433319,vit3d
+sample_004.png,4,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.2886272668838501,vit3d
+sample_005.png,5,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.3658499121665954,vit3d
+sample_006.png,6,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.2608631253242492,vit3d
+sample_007.png,7,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.4328891038894653,vit3d
+sample_000.png,0,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.2259123474359512,gnn
+sample_001.png,1,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.3479722142219543,gnn
+sample_002.png,2,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.245310977101326,gnn
+sample_003.png,3,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.3344263732433319,gnn
+sample_004.png,4,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.2886272668838501,gnn
+sample_005.png,5,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.3658499121665954,gnn
+sample_006.png,6,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.2608631253242492,gnn
+sample_007.png,7,A high-quality photo: a dog on grass. Alternatives: a red car; a mountain scene,0.4328891038894653,gnn
