@@ -1,7 +1,7 @@
-# src/fmri2image/generation/sd_wrapper.py
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, List
+import types
 import torch
 
 
@@ -19,15 +19,51 @@ class SDConfig:
     scheduler: Optional[str] = None  # e.g., "dpmpp", "default"
 
 
+def _install_transformers_compat_shim():
+    """
+    Some diffusers versions pass kwargs like 'offload_state_dict' down into
+    transformers' PreTrainedModel.from_pretrained / __init__, which older
+    transformers versions don't accept. This shim strips unknown kwargs.
+    """
+    try:
+        import transformers
+        from transformers.modeling_utils import PreTrainedModel
+    except Exception:
+        return  # transformers not available, nothing to do
+
+    orig_from_pretrained = PreTrainedModel.from_pretrained
+
+    # Wrap classmethod while keeping it a classmethod
+    def _from_pretrained_shim(cls, *args, **kwargs):
+        # Strip kwargs that can appear from diffusers loaders in older stacks
+        for k in (
+            "offload_state_dict",
+            "keep_in_fp32_modules",
+            "low_cpu_mem_usage",
+            "variant",
+            "use_safetensors",
+            "ignore_mismatched_sizes",
+        ):
+            kwargs.pop(k, None)
+        return orig_from_pretrained.__func__(cls, *args, **kwargs)  # call original function of classmethod
+
+    PreTrainedModel.from_pretrained = classmethod(_from_pretrained_shim)
+
+
 class StableDiffusionGenerator:
     """
     Minimal wrapper around Diffusers text-to-image pipelines (SD 1.5 / SDXL).
-    This version disables the safety checker and the low-CPU-mem loading path
-    to avoid version-mismatch issues like 'offload_state_dict'.
+    Compatible with older transformers by:
+      - disabling safety checker
+      - forcing low_cpu_mem_usage=False
+      - stripping unsupported kwargs via a transformers shim.
     """
 
     def __init__(self, cfg: SDConfig):
         self.cfg = cfg
+
+        # Install compatibility shim before any pipeline loads submodules
+        _install_transformers_compat_shim()
 
         try:
             from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
@@ -54,27 +90,25 @@ class StableDiffusionGenerator:
         else:
             raise ValueError(f"Unknown SD model: {cfg.model}")
 
-        # --- IMPORTANT: avoid offload_state_dict issues across versions ---
-        #  - safety_checker=None, feature_extractor=None -> do not load safety checker
-        #  - low_cpu_mem_usage=False -> do not try to pass offload_state_dict to submodules
+        # Avoid version-mismatch paths: disable safety checker and low CPU mem mode.
+        # Use 'dtype' (newer arg) and keep 'torch_dtype' for older stacks via kwargs.
+        # We pass both safely; unknown arg will be ignored by our shim.
         self.pipe = Pipe.from_pretrained(
             repo,
             safety_checker=None,
             feature_extractor=None,
-            torch_dtype=torch_dtype,       # 'dtype' is the new arg; keep for compatibility
-            low_cpu_mem_usage=False,
+            low_cpu_mem_usage=False,  # critical: prevents offload paths
+            torch_dtype=torch_dtype,  # backward compat
         )
 
-        # Optional: swap scheduler if requested (safe fallback if missing)
+        # Optional: swap scheduler if requested
         if cfg.scheduler:
             try:
                 if cfg.scheduler.lower() in {"dpmpp", "dpm-solver", "dpm"}:
                     from diffusers import DPMSolverMultistepScheduler
                     self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config)
-                # else: keep default scheduler
             except Exception:
-                # If scheduler change fails, silently keep default
-                pass
+                pass  # keep default if swap fails
 
         # Move to device and make UI quiet
         self.pipe = self.pipe.to(cfg.device)
