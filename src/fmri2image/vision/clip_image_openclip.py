@@ -1,50 +1,70 @@
+# src/fmri2image/vision/clip_image_openclip.py
 import argparse
+import os
 from pathlib import Path
+import numpy as np
+import pickle
 from PIL import Image
-from fmri2image.embeddings.clip_utils import load_openclip, encode_images, save_embeddings_npy_pkl
 
+import torch
 
-def collect_images(root: str, exts=(".jpg", ".jpeg", ".png", ".bmp", ".webp")):
-    root = Path(root)
-    paths = sorted([p for p in root.rglob("*") if p.suffix.lower() in exts])
-    return paths
+def list_images(root: str):
+    exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+    root_p = Path(root)
+    if not root_p.exists():
+        return []
+    files = []
+    for p in root_p.rglob("*"):
+        if p.is_file() and p.suffix.lower() in exts:
+            files.append(p)
+    return sorted(files)
 
+def save_meta(meta_path: str, items):
+    meta = {"paths": [str(p) for p in items]}
+    with open(meta_path, "wb") as f:
+        pickle.dump(meta, f)
 
 def main():
-    ap = argparse.ArgumentParser(description="OpenCLIP Image Embedding Generator")
-    ap.add_argument("--images_root", type=str, required=True, help="Root folder with images")
-    ap.add_argument("--out_npy", type=str, required=True, help="Output .npy for embeddings")
-    ap.add_argument("--out_pkl", type=str, required=True, help="Output .pkl metadata")
-    ap.add_argument("--model", type=str, default="ViT-B-32")
-    ap.add_argument("--pretrained", type=str, default="laion2b_s34b_b79k")
-    ap.add_argument("--batch_size", type=int, default=64)
-    ap.add_argument("--device", type=str, default=None)
-    args = ap.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--images_root", required=True)
+    parser.add_argument("--out_npy", required=True)
+    parser.add_argument("--out_pkl", required=True)
+    parser.add_argument("--model", default="ViT-B-32")
+    parser.add_argument("--pretrained", default="laion2b_s34b_b79k")
+    args = parser.parse_args()
 
-    paths = collect_images(args.images_root)
-    if not paths:
-        raise SystemExit(f"No images found under: {args.images_root}")
+    paths = list_images(args.images_root)
 
-    model, _tok, preprocess, device = load_openclip(args.model, args.pretrained, args.device)
+    # Graceful no-op: if no images, write empty artifacts and exit(0)
+    if len(paths) == 0:
+        os.makedirs(Path(args.out_npy).parent, exist_ok=True)
+        np.save(args.out_npy, np.zeros((0, 512), dtype=np.float32))  # assume 512-d OpenCLIP
+        save_meta(args.out_pkl, [])
+        print(f"[warn] no images under {args.images_root}; wrote empty embeddings -> {args.out_npy} and meta -> {args.out_pkl}")
+        return
 
-    imgs = [Image.open(p).convert("RGB") for p in paths]
-    emb = encode_images(model, preprocess, imgs, device=device, batch_size=args.batch_size, normalize=True)
-
-    # Save
-    save_embeddings_npy_pkl(
-        args.out_npy,
-        args.out_pkl,
-        emb,
-        meta={
-            "num_images": len(paths),
-            "model": args.model,
-            "pretrained": args.pretrained,
-            "device": device,
-            "paths": [str(p) for p in paths],
-        },
+    # Lazy import OpenCLIP only if we actually need it
+    import open_clip
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model, _, preprocess = open_clip.create_model_and_transforms(
+        args.model, pretrained=args.pretrained, device=device
     )
-    print(f"[ok] wrote image embeddings -> {args.out_npy} ; meta -> {args.out_pkl} ; shape={emb.shape}")
+    model.eval()
 
+    feats = []
+    with torch.no_grad():
+        for p in paths:
+            img = Image.open(p).convert("RGB")
+            x = preprocess(img).unsqueeze(0).to(device)
+            emb = model.encode_image(x)
+            emb = emb / emb.norm(dim=-1, keepdim=True)
+            feats.append(emb.float().cpu().numpy())
+
+    feats = np.concatenate(feats, axis=0)  # [N, D]
+    os.makedirs(Path(args.out_npy).parent, exist_ok=True)
+    np.save(args.out_npy, feats)
+    save_meta(args.out_pkl, paths)
+    print(f"[ok] wrote image embeddings -> {args.out_npy} ; meta -> {args.out_pkl} ; shape={feats.shape}")
 
 if __name__ == "__main__":
     main()
