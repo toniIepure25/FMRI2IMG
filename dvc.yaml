@@ -24,16 +24,42 @@ stages:
       - data/processed/nsd/roi:
           persist: true
 
+  # === UPDATED: OpenCLIP text embeddings (writes .npy + .pkl) ===
   clip_text:
     cmd: >
-      python -m fmri2image.text.clip_text
+      python -m fmri2image.text.clip_text_openclip
       --captions data/raw/nsd/captions.csv
-      --out data/processed/nsd/clip_text.npy
+      --out_npy data/processed/nsd/clip_text.npy
+      --out_pkl data/processed/nsd/clip_text_meta.pkl
+      --model ViT-B-32
+      --pretrained laion2b_s34b_b79k
     deps:
-      - src/fmri2image/text/clip_text.py
+      - src/fmri2image/text/clip_text_openclip.py
+      - src/fmri2image/embeddings/clip_utils.py
       - data/raw/nsd/captions.csv
     outs:
       - data/processed/nsd/clip_text.npy:
+          persist: true
+      - data/processed/nsd/clip_text_meta.pkl:
+          persist: true
+
+  # === NEW: OpenCLIP image embeddings (optional but recommended) ===
+  clip_image:
+    cmd: >
+      python -m fmri2image.vision.clip_image_openclip
+      --images_root data/raw/nsd/images
+      --out_npy data/processed/nsd/clip_img.npy
+      --out_pkl data/processed/nsd/clip_img_meta.pkl
+      --model ViT-B-32
+      --pretrained laion2b_s34b_b79k
+    deps:
+      - src/fmri2image/vision/clip_image_openclip.py
+      - src/fmri2image/embeddings/clip_utils.py
+      - data/raw/nsd/images
+    outs:
+      - data/processed/nsd/clip_img.npy:
+          persist: true
+      - data/processed/nsd/clip_img_meta.pkl:
           persist: true
 
   baseline_train:
