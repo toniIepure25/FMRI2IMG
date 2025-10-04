@@ -26,3 +26,6 @@ reports/``
 # allow DVC metadata in data/artifacts
 !data/artifacts/**/*.dvc
 !data/artifacts/**/.gitignore
+
+# Codebase from npx ai-digest
+codebase.md

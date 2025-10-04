@@ -14,10 +14,41 @@ import torch
 import torchvision.utils as vutils
 from PIL import Image
 
+from types import SimpleNamespace
+
 # --- imports from your codebase ---
 from fmri2image.pipelines.baseline_train import build_encoder  # reuse dimension logic
 from fmri2image.data.nsd_reader import NSDReader
 from fmri2image.generation.sd_wrapper import SDConfig, StableDiffusionGenerator
+
+def _ns(**kwargs):
+    return SimpleNamespace(**kwargs)
+
+def make_min_infer_cfg(fmri_input_dim: int, encoder_name: str, clip_dim: int) -> SimpleNamespace:
+    """
+    Build a minimal Hydra-like cfg tree that satisfies build_encoder(...)
+    used in training. Safe defaults are chosen to match your baseline.
+    """
+    # model head defaults
+    model = _ns(
+        fmri_input_dim=int(fmri_input_dim),
+        latent_dim=int(clip_dim),
+        hidden=[2048, 1024, 768],  # fallback if training cfg isn't available
+    )
+    # vit3d defaults
+    vit3d = _ns(time_steps=8, patch=1, depth=2, heads=4, mlp_ratio=2.0, dropout=0.1)
+    # gnn defaults
+    gnn = _ns(use_identity_adj=True, dropout=0.1)
+
+    train = _ns(
+        encoder=str(encoder_name).lower(),
+        model=model,
+        vit3d=vit3d,
+        gnn=gnn,
+    )
+    # full tree
+    cfg = _ns(train=train)
+    return cfg
 
 def cosine_topk(x: np.ndarray, Y: np.ndarray, k: int) -> Tuple[np.ndarray, np.ndarray]:
     """Return indices and scores of top-k by cosine between single x and rows of Y."""
@@ -46,18 +77,23 @@ def save_grid(pil_images: List[Image.Image], out_path: str, nrow: int = 4):
     grid = grid.permute(1, 2, 0).cpu().numpy().astype(np.uint8)
     Image.fromarray(grid).save(out_path)
 
-def load_encoder_from_ckpt(ckpt_path: str, encoder_type: str, fmri_input_dim: int, clip_dim: int):
-    ckpt = torch.load(ckpt_path, map_location="cpu")
-    # minimal cfg shim
-    class CfgObj: ...
-    cfg = CfgObj()
-    cfg.train = CfgObj()
-    cfg.train.encoder = encoder_type
-    cfg.train.model = CfgObj()
-    cfg.train.model.fmri_input_dim = fmri_input_dim
+def load_encoder_from_ckpt(ckpt_path: str, enc_name: str, *, fmri_input_dim: int, clip_dim: int):
+    """
+    Build the encoder with a minimal cfg and load 'encoder.*' weights from a Lightning ckpt.
+    """
+    # 1) Build a minimal config tree the training build_encoder(...) understands
+    cfg = make_min_infer_cfg(fmri_input_dim=fmri_input_dim, encoder_name=enc_name, clip_dim=clip_dim)
 
+    # 2) Instantiate matching arch
+    from fmri2image.pipelines.baseline_train import build_encoder
     encoder = build_encoder(cfg, out_dim=clip_dim)
+
+    # 3) Load weights
+    import torch
+    ckpt = torch.load(ckpt_path, map_location="cpu")
     state = ckpt.get("state_dict", ckpt)
+
+    # Filter only encoder.* keys
     enc_state = {k.split("encoder.", 1)[1]: v for k, v in state.items() if k.startswith("encoder.")}
     missing, unexpected = encoder.load_state_dict(enc_state, strict=False)
     print(f"[load] encoder weights loaded (missing={len(missing)}, unexpected={len(unexpected)})")
@@ -67,8 +103,9 @@ def load_caption_bank(meta_pkl_path: str) -> Optional[List[str]]:
     """
     Load captions bank aligned to clip_text.npy indices.
     Accepts either:
-      - dict with key 'captions' (preferred), or
-      - a plain list of strings.
+      - dict with a list[str] value under common keys (captions, texts, items, data, strings), or
+      - the first list[str] value found in the dict, or
+      - a plain list[str].
     """
     if not os.path.exists(meta_pkl_path):
         print(f"[warn] caption meta not found: {meta_pkl_path}")
@@ -76,17 +113,29 @@ def load_caption_bank(meta_pkl_path: str) -> Optional[List[str]]:
     try:
         with open(meta_pkl_path, "rb") as f:
             obj = pickle.load(f)
-        if isinstance(obj, dict) and "captions" in obj:
-            caps = obj["captions"]
-            if isinstance(caps, list):
-                return [str(c) for c in caps]
-        if isinstance(obj, list):
-            return [str(c) for c in obj]
+
+        # plain list[str]
+        if isinstance(obj, list) and all(isinstance(x, (str, bytes)) for x in obj):
+            return [x.decode("utf-8") if isinstance(x, bytes) else str(x) for x in obj]
+
+        # dict: try common keys first
+        if isinstance(obj, dict):
+            candidate_keys = ["captions", "texts", "strings", "items", "data"]
+            for k in candidate_keys:
+                v = obj.get(k)
+                if isinstance(v, list) and all(isinstance(x, (str, bytes)) for x in v):
+                    return [x.decode("utf-8") if isinstance(x, bytes) else str(x) for x in v]
+            # fallback: first list[str] value we can find
+            for v in obj.values():
+                if isinstance(v, list) and all(isinstance(x, (str, bytes)) for x in v):
+                    return [x.decode("utf-8") if isinstance(x, bytes) else str(x) for x in v]
+
         print(f"[warn] unrecognized meta schema in {meta_pkl_path}; falling back")
         return None
     except Exception as e:
         print(f"[warn] failed to load caption meta ({meta_pkl_path}): {e}")
         return None
+
 
 def main():
     p = argparse.ArgumentParser()

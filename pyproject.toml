@@ -30,6 +30,10 @@ dependencies = [
   "nilearn>=0.10",
   "h5py>=3.11",
   "open_clip_torch>=2.24.0",
+  "diffusers>=0.27.0",
+  "transformers>=4.40.0",
+  "accelerate>=0.28.0",
+  "safetensors>=0.4.2"
 ]
 
 [tool.ruff]

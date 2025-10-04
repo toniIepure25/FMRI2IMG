@@ -1,0 +1,8 @@
+# configs/generate/sd.yaml
+sd:
+  model: sd15 # sd15 | sdxl
+  steps: 25
+  guidance: 7.5
+  height: 512
+  width: 512
+  negative_prompt: "blurry, low quality, low resolution, artifacts, distorted, deformed, text, watermark"
