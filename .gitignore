@@ -29,3 +29,6 @@ reports/``
 
 # Codebase from npx ai-digest
 codebase.md
+# allow evaluation csv/txt
+!reports/**/ *.csv
+!reports/**/ *.txt
