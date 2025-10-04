@@ -1,4 +1,3 @@
-# apps/infer_sd.py
 """
 E2E baseline: fMRI -> CLIP-text latent -> prompt -> Stable Diffusion (text-to-image).
 - Loads encoder weights from a baseline checkpoint (MLP/GNN/ViT3D).
@@ -8,12 +7,11 @@ E2E baseline: fMRI -> CLIP-text latent -> prompt -> Stable Diffusion (text-to-im
 from __future__ import annotations
 import argparse, os, pickle
 from pathlib import Path
-from typing import List, Tuple, Optional, Any, Dict
+from typing import List, Tuple, Optional
 import numpy as np
 import torch
 import torchvision.utils as vutils
 from PIL import Image
-
 from types import SimpleNamespace
 
 # --- imports from your codebase ---
@@ -85,11 +83,9 @@ def load_encoder_from_ckpt(ckpt_path: str, enc_name: str, *, fmri_input_dim: int
     cfg = make_min_infer_cfg(fmri_input_dim=fmri_input_dim, encoder_name=enc_name, clip_dim=clip_dim)
 
     # 2) Instantiate matching arch
-    from fmri2image.pipelines.baseline_train import build_encoder
     encoder = build_encoder(cfg, out_dim=clip_dim)
 
     # 3) Load weights
-    import torch
     ckpt = torch.load(ckpt_path, map_location="cpu")
     state = ckpt.get("state_dict", ckpt)
 
@@ -161,7 +157,7 @@ def main():
     reader = NSDReader(
         images_root="data/raw/nsd/images",
         fmri_root="data/raw/nsd/fmri",
-        captions="data/raw/nsd/captions.csv",  # <-- FIXED: 'captions' not 'captions_path'
+        captions="data/raw/nsd/captions.csv",  # 'captions' (not 'captions_path')
         roi_dir="data/processed/nsd/roi",
         subject=args.subject,
     )

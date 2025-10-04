@@ -18,6 +18,7 @@ except Exception:  # pragma: no cover
 from ..models.encoders.mlp_encoder import FMRIEncoderMLP
 from ..models.encoders.vit3d_encoder import ViT3DEncoderLite
 from ..models.encoders.gnn_encoder import GraphMLPEncoderLite
+from ..models.heads.visual_head import VisualHead
 
 from ..losses.cca import DeepCCALoss
 
@@ -129,7 +130,7 @@ class LitModule(pl.LightningModule):
         out_dim = int(clip_text_feats.shape[1])
         self.encoder = build_encoder(cfg, out_dim)
 
-        # Contrastive loss
+        # Contrastive loss (text)
         self.criterion = ClipStyleContrastiveLoss(
             temperature_init=float(cfg.train.loss.temperature_init),
             symmetric=bool(cfg.train.loss.get("symmetric", True)),
@@ -148,6 +149,7 @@ class LitModule(pl.LightningModule):
         w = getattr(cfg.train.loss, "weights", {})
         self.w_contrast = float(w.get("contrastive", 1.0))
         self.w_cca = float(w.get("cca", 0.0))
+        self.w_visual = float(w.get("visual", 0.0))  # NEW: visual loss weight
 
         # Register CLIP text features as a non-persistent buffer (moved with device)
         self.register_buffer(
@@ -156,8 +158,37 @@ class LitModule(pl.LightningModule):
             persistent=False,
         )
 
+        # --- Optional visual-head to CLIP-Image space (FAZA 4a) ---
+        self.use_visual = False
+        self.visual_head = None
+        self.clip_img_feats = None
+        try:
+            clip_img_path = "data/processed/nsd/clip_img.npy"
+            if os.path.exists(clip_img_path):
+                clip_img_feats = np.load(clip_img_path)
+                if isinstance(clip_img_feats, np.ndarray) and clip_img_feats.size > 0:
+                    vis_dim = int(clip_img_feats.shape[1])
+                    # create head mapping directly from raw fMRI -> CLIP-Image dims
+                    self.visual_head = VisualHead(
+                        in_dim=int(cfg.train.model.fmri_input_dim),
+                        out_dim=vis_dim,
+                        hidden=list(getattr(cfg.train.model, "hidden", [])),
+                        dropout=float(getattr(getattr(cfg.train, "gnn", {}), "dropout", 0.0)),
+                    )
+                    self.register_buffer(
+                        "clip_img_feats",
+                        torch.tensor(clip_img_feats, dtype=torch.float32),
+                        persistent=False,
+                    )
+                    self.use_visual = True
+        except Exception as e:
+            print(f"[warn] could not enable visual head: {e}")
+            self.use_visual = False
+            self.visual_head = None
+            self.clip_img_feats = None
+
         self.topk = tuple(getattr(getattr(cfg.train, "eval", {}), "topk", [1, 5]))
-        # Save hyperparameters except the big array (stored as buffer)
+        # Save hyperparameters except the big arrays (stored as buffers)
         try:
             self.save_hyperparameters({"cfg": cfg})
         except Exception:
@@ -168,7 +199,7 @@ class LitModule(pl.LightningModule):
         z = self.encoder(x)                      # [B, D]
         t = self.clip_text_feats.index_select(0, idx.long())  # [B, D] on correct device
 
-        # --- Contrastive ---
+        # --- Contrastive (text) ---
         out = self.criterion(z, t)
         loss_total = self.w_contrast * out["loss"]
 
@@ -179,15 +210,41 @@ class LitModule(pl.LightningModule):
         else:
             cca_out = None
 
-        # --- Logging with explicit batch_size ---
         bs = x.size(0)
+
+        # --- NEW: Optional Visual contrastive (fMRI -> CLIP-Image space) ---
+        if self.use_visual and self.w_visual > 0.0 and self.visual_head is not None and self.clip_img_feats is not None:
+            # map raw fMRI to CLIP-Image space
+            z_vis = self.visual_head(x)  # [B, V]
+            z_vis = z_vis / (z_vis.norm(dim=-1, keepdim=True) + 1e-8)
+            t_img = self.clip_img_feats.index_select(0, idx.long())
+            t_img = t_img / (t_img.norm(dim=-1, keepdim=True) + 1e-8)
+
+            # reuse text loss temperature
+            scale = torch.exp(self.criterion.logit_scale.clamp(-5.0, 8.0))
+            logits_vt = (z_vis @ t_img.t()) * scale
+            target = torch.arange(z_vis.size(0), device=z_vis.device)
+            loss_vt = nn.functional.cross_entropy(logits_vt, target)
+
+            loss_total = loss_total + self.w_visual * loss_vt
+
+            # log retrieval in visual space (ranking invariant to temperature)
+            with torch.no_grad():
+                sim_vt = logits_vt / scale
+                m_vt = topk_retrieval(sim_vt, self.topk)
+                for k, v in m_vt.items():
+                    self.log(f"train/retrieval_vis_{k}", v, on_step=False, on_epoch=True, prog_bar=False, batch_size=bs)
+
+            self.log("train/loss_visual", loss_vt, on_step=True, on_epoch=True, prog_bar=False, batch_size=bs)
+
+        # --- Logging with explicit batch_size (text/cca already computed) ---
         self.log("train/loss", loss_total, prog_bar=True, on_step=True, on_epoch=True, batch_size=bs)
         self.log("train/loss_contrast", out["loss"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
         self.log("train/temp", out["temp"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
         if cca_out is not None:
             self.log("train/cca_corr", cca_out["corr_sum"], prog_bar=False, on_step=True, on_epoch=True, batch_size=bs)
 
-        # --- Retrieval metrics within-batch (ranking unaffected by temperature) ---
+        # --- Retrieval metrics within-batch (text space) ---
         with torch.no_grad():
             sim_zt = out["logits_zt"] / torch.exp(self.criterion.logit_scale)  # remove scale for ranking
             m_zt = topk_retrieval(sim_zt, self.topk)
@@ -276,8 +333,8 @@ def run_baseline(cfg: DictConfig):
             mode="min",
             filename="epoch{epoch:02d}-step{step}",
             auto_insert_metric_name=False,
-            every_n_train_steps=1,          
-            save_on_train_epoch_end=True,   
+            every_n_train_steps=1,
+            save_on_train_epoch_end=True,
         )
         callbacks.append(ckpt_cb)
 
