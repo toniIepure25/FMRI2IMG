@@ -42,23 +42,17 @@ class StableDiffusionGenerator:
 
         self.is_sdxl = cfg.model.lower() in ("sdxl", "stable-diffusion-xl")
 
+        # IMPORTANT: low_cpu_mem_usage=False avoids passing offload_state_dict to transformers
+        common_kwargs = dict(torch_dtype=torch_dtype, safety_checker=None, low_cpu_mem_usage=False)
+
         if not self.is_sdxl:
             repo = "runwayml/stable-diffusion-v1-5"
-            # NOTE: safety_checker=None to avoid version skew issues
-            self.pipe = StableDiffusionPipeline.from_pretrained(
-                repo, torch_dtype=torch_dtype, safety_checker=None
-            )
-            self.pipe_i2i = StableDiffusionImg2ImgPipeline.from_pretrained(
-                repo, torch_dtype=torch_dtype, safety_checker=None
-            )
+            self.pipe = StableDiffusionPipeline.from_pretrained(repo, **common_kwargs)
+            self.pipe_i2i = StableDiffusionImg2ImgPipeline.from_pretrained(repo, **common_kwargs)
         else:
             repo = "stabilityai/stable-diffusion-xl-base-1.0"
-            self.pipe = StableDiffusionXLPipeline.from_pretrained(
-                repo, torch_dtype=torch_dtype, safety_checker=None
-            )
-            self.pipe_i2i = StableDiffusionXLImg2ImgPipeline.from_pretrained(
-                repo, torch_dtype=torch_dtype, safety_checker=None
-            )
+            self.pipe = StableDiffusionXLPipeline.from_pretrained(repo, **common_kwargs)
+            self.pipe_i2i = StableDiffusionXLImg2ImgPipeline.from_pretrained(repo, **common_kwargs)
 
         self.pipe = self.pipe.to(cfg.device)
         self.pipe_i2i = self.pipe_i2i.to(cfg.device)
@@ -82,14 +76,11 @@ class StableDiffusionGenerator:
         steps = self.cfg.num_inference_steps if num_inference_steps is None else num_inference_steps
         neg = negative_prompt if negative_prompt is not None else self.cfg.negative_prompt
 
-        # Diffusers requires negative_prompt to match prompt type/len
+        # Ensure negative_prompt matches type/len of prompt
         if isinstance(prompts, list):
             if isinstance(neg, str):
                 neg = [neg] * len(prompts)
-            elif neg is None:
-                neg = None
         else:
-            # prompts is str
             if isinstance(neg, list):
                 neg = neg[0] if neg else None
 
