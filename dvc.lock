@@ -74,22 +74,31 @@ stages:
       size: 983168
       nfiles: 1
   clip_text:
-    cmd: "python -m fmri2image.text.clip_text --captions data/raw/nsd/captions.csv
-      --out data/processed/nsd/clip_text.npy\n"
+    cmd: "python -m fmri2image.text.clip_text_openclip --captions data/raw/nsd/captions.csv
+      --out_npy data/processed/nsd/clip_text.npy --out_pkl data/processed/nsd/clip_text_meta.pkl
+      --model ViT-B-32 --pretrained laion2b_s34b_b79k\n"
     deps:
     - path: data/raw/nsd/captions.csv
       hash: md5
       md5: 2cfdc695fc4d02a0aef4e9c1185bf1ae
       size: 65
-    - path: src/fmri2image/text/clip_text.py
+    - path: src/fmri2image/embeddings/clip_utils.py
       hash: md5
-      md5: 6a157c4ab11fcd3922ff2414e344cc67
-      size: 1277
+      md5: 2f25db598ee0bb0b5371e4f5e7de65d3
+      size: 2205
+    - path: src/fmri2image/text/clip_text_openclip.py
+      hash: md5
+      md5: f340bc8ca2f6963f44ab4482811547a9
+      size: 2162
     outs:
     - path: data/processed/nsd/clip_text.npy
       hash: md5
       md5: 2577ce444d57eb6c9b162b4a4c8b09f4
       size: 6272
+    - path: data/processed/nsd/clip_text_meta.pkl
+      hash: md5
+      md5: d412e3c27d265d5423f04c1041c48eb7
+      size: 98
   pretrain_encoder:
     cmd: "python -m fmri2image.selfsupervised.pretrain_fmri --images_root data/raw/nsd/images
       --fmri_root data/raw/nsd/fmri --captions data/raw/nsd/captions.csv --roi_dir
@@ -113,3 +122,30 @@ stages:
       hash: md5
       md5: 04a629f13e039b482e0b6686f20ab5a3
       size: 25180747
+  clip_image:
+    cmd: "python -m fmri2image.vision.clip_image_openclip --images_root data/raw/nsd/images
+      --out_npy data/processed/nsd/clip_img.npy --out_pkl data/processed/nsd/clip_img_meta.pkl
+      --model ViT-B-32 --pretrained laion2b_s34b_b79k\n"
+    deps:
+    - path: data/raw/nsd/images
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+    - path: src/fmri2image/embeddings/clip_utils.py
+      hash: md5
+      md5: 2f25db598ee0bb0b5371e4f5e7de65d3
+      size: 2205
+    - path: src/fmri2image/vision/clip_image_openclip.py
+      hash: md5
+      md5: bb3980ece6ca209e769c6101a8bcaa21
+      size: 2393
+    outs:
+    - path: data/processed/nsd/clip_img.npy
+      hash: md5
+      md5: ac6ac004ad661dca087f63cb3c631ab5
+      size: 128
+    - path: data/processed/nsd/clip_img_meta.pkl
+      hash: md5
+      md5: 32f739575d5d451db52bd5b1671d89ce
+      size: 25
