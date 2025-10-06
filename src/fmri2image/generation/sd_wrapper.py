@@ -5,6 +5,68 @@ from typing import Optional, List, Sequence
 import contextlib
 import torch
 
+# add near the top of the file
+import math
+from safetensors.torch import load_file as load_safetensors
+
+def _attach_simple_lora_linear(module, proj_name: str, rank: int, alpha: float):
+    """
+    Attach simple LoRA A/B to a nn.Linear stored under `module.{proj_name}` and
+    monkey-patch forward: y = W x + scale * B(A x)
+    If already attached, it reuses existing layers (so we can just overwrite weights).
+    """
+    lin = getattr(module, proj_name, None)
+    if not isinstance(lin, torch.nn.Linear):
+        return None  # not a Linear -> skip
+
+    # if already attached, reuse
+    A = getattr(module, f"{proj_name}_lora_A", None)
+    B = getattr(module, f"{proj_name}_lora_B", None)
+    if A is None or B is None:
+        in_f, out_f = lin.in_features, lin.out_features
+        A = torch.nn.Linear(in_f, rank, bias=False)
+        B = torch.nn.Linear(rank, out_f, bias=False)
+        # init like in the trainer
+        torch.nn.init.kaiming_uniform_(A.weight, a=math.sqrt(5))
+        torch.nn.init.zeros_(B.weight)
+        setattr(module, f"{proj_name}_lora_A", A)
+        setattr(module, f"{proj_name}_lora_B", B)
+
+        scale = float(alpha) / float(rank)
+
+        orig_fwd = lin.forward
+        def fwd(x, orig_fwd=orig_fwd, A=A, B=B, scale=scale):
+            return orig_fwd(x) + B(A(x)) * scale
+        lin.forward = fwd
+
+    return A, B
+
+def _load_simple_lora_into_unet(unet, state: dict, alpha: float):
+    """
+    Load our simple A/B LoRA weights (keys like:
+    '<module_path>.to_q.lora_A.weight' / '...lora_B.weight') into UNet.
+    """
+    loaded = 0
+    for name, module in unet.named_modules():
+        for proj in ["to_q", "to_k", "to_v", "to_out.0"]:
+            key_A = f"{name}.{proj}.lora_A.weight"
+            key_B = f"{name}.{proj}.lora_B.weight"
+            if key_A in state and key_B in state:
+                # infer rank from tensor shape
+                rank = int(state[key_A].shape[0])
+                pair = _attach_simple_lora_linear(module, proj, rank=rank, alpha=alpha)
+                if pair is None:
+                    continue
+                A, B = pair
+                with torch.no_grad():
+                    A.weight.copy_(state[key_A].to(A.weight.device, dtype=A.weight.dtype))
+                    B.weight.copy_(state[key_B].to(B.weight.device, dtype=B.weight.dtype))
+                loaded += 1
+    if loaded == 0:
+        raise RuntimeError("No matching A/B LoRA keys were loaded into UNet.")
+    return loaded
+
+
 @dataclass
 class SDConfig:
     model: str = "sd15"   # "sd15" | "sdxl"
@@ -105,27 +167,35 @@ class StableDiffusionGenerator:
         self.pipe_i2i.set_progress_bar_config(disable=True)
 
 
-    def load_lora(self, lora_path: str, alpha: float | None = None):
+    def load_lora(self, lora_path: str, alpha: float = 1.0):
         """
-        Load a LoRA adapter file (.safetensors) into the pipeline.
-        If alpha is provided and the diffusers version supports it, set adapter weight.
+        Try native Diffusers LoRA loader. If the file is in our simple A/B format,
+        fall back to custom injection.
         """
+        # First try native (diffusers) format
         try:
             self.pipe.load_lora_weights(lora_path)
-        except Exception as e:
-            # Fallback: some versions require passing local_pretrained_model_name_or_path
+            # set alpha via built-in API if available
             try:
-                from diffusers.loaders import LoraLoaderMixin  # for type context
-                self.pipe.load_lora_weights(lora_path, adapter_name="default")
-            except Exception as e2:
-                raise RuntimeError(f"Failed to load LoRA weights from {lora_path}: {e} / {e2}")
-
-        if alpha is not None:
-            try:
-                self.pipe.set_adapters(["default"], adapter_weights=[float(alpha)])
+                self.pipe.fuse_lora(lora_scale=float(alpha))
             except Exception:
-                # Older diffusers might not support set_adapters; safe to ignore.
                 pass
+            return
+        except Exception as e_native:
+            # Fallback: our simple A/B safetensors
+            try:
+                state = load_safetensors(lora_path)  # dict[str, Tensor]
+                # Put A/B tensors on the same device as UNet
+                for k, v in state.items():
+                    if isinstance(v, torch.Tensor):
+                        state[k] = v.to(self.pipe.unet.device)
+                loaded = _load_simple_lora_into_unet(self.pipe.unet, state, alpha=float(alpha))
+                print(f"[lora] loaded simple A/B LoRA into UNet ({loaded} projections).")
+                return
+            except Exception as e_fallback:
+                raise RuntimeError(
+                    f"Failed to load LoRA weights from {lora_path}: {e_native} / {e_fallback}"
+                )
 
     @torch.inference_mode()
     def generate(
