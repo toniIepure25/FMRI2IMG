@@ -106,6 +106,10 @@ def main():
     # refine (img2img)
     p.add_argument("--refine", action="store_true", help="apply a second pass img2img refine")
     p.add_argument("--refine_strength", type=float, default=0.3)
+    # LoRA (optional)
+    p.add_argument("--lora_path", default=None, help="Optional path to a LoRA .safetensors adapter")
+    p.add_argument("--lora_alpha", type=float, default=None, help="Optional LoRA scaling (if supported)")
+
     args = p.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -140,6 +144,9 @@ def main():
         negative_prompt="blurry, low quality, low resolution, artifacts, distorted, deformed, text, watermark"
     )
     sd = StableDiffusionGenerator(sd_cfg)
+
+    if args.lora_path:
+        sd.load_lora(args.lora_path, alpha=args.lora_alpha)
 
     prompts: List[str] = []
     rng = np.random.default_rng(args.seed)

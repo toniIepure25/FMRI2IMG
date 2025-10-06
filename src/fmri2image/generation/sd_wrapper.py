@@ -104,6 +104,29 @@ class StableDiffusionGenerator:
         self.pipe.set_progress_bar_config(disable=True)
         self.pipe_i2i.set_progress_bar_config(disable=True)
 
+
+    def load_lora(self, lora_path: str, alpha: float | None = None):
+        """
+        Load a LoRA adapter file (.safetensors) into the pipeline.
+        If alpha is provided and the diffusers version supports it, set adapter weight.
+        """
+        try:
+            self.pipe.load_lora_weights(lora_path)
+        except Exception as e:
+            # Fallback: some versions require passing local_pretrained_model_name_or_path
+            try:
+                from diffusers.loaders import LoraLoaderMixin  # for type context
+                self.pipe.load_lora_weights(lora_path, adapter_name="default")
+            except Exception as e2:
+                raise RuntimeError(f"Failed to load LoRA weights from {lora_path}: {e} / {e2}")
+
+        if alpha is not None:
+            try:
+                self.pipe.set_adapters(["default"], adapter_weights=[float(alpha)])
+            except Exception:
+                # Older diffusers might not support set_adapters; safe to ignore.
+                pass
+
     @torch.inference_mode()
     def generate(
         self,
