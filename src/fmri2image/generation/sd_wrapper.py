@@ -5,10 +5,28 @@ from typing import Optional, List, Sequence
 import contextlib
 import torch
 
-# add near the top of the file
-# --- add/replace these helpers near the top of sd_wrapper.py ---
 import math
 from safetensors.torch import load_file as load_safetensors
+
+class LinearWithLoRA(torch.nn.Module):
+    """
+    Wraps an existing nn.Linear as `base`, and adds LoRA A/B:
+        y = base(x) + B(A(x)) * scale
+    """
+    def __init__(self, base: torch.nn.Linear, rank: int, alpha: float):
+        super().__init__()
+        assert isinstance(base, torch.nn.Linear)
+        self.base = base
+        self.rank = int(rank)
+        self.scale = float(alpha) / float(rank)
+
+        self.lora_A = torch.nn.Linear(base.in_features, rank, bias=False)
+        self.lora_B = torch.nn.Linear(rank, base.out_features, bias=False)
+        torch.nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
+        torch.nn.init.zeros_(self.lora_B.weight)
+
+    def forward(self, x):
+        return self.base(x) + self.lora_B(self.lora_A(x)) * self.scale
 
 def _get_linear(module, proj_name: str):
     """
@@ -24,64 +42,58 @@ def _get_linear(module, proj_name: str):
         lin = getattr(module, proj_name, None)
     return lin if isinstance(lin, torch.nn.Linear) else None
 
-def _attach_simple_lora_linear(module, proj_name: str, rank: int, alpha: float):
+def _replace_with_lora_wrapper(module, proj_name: str, rank: int, alpha: float):
     """
-    Attach simple LoRA A/B to the Linear at proj_name and monkey-patch its forward:
-      y = W x + scale * B(A(x)), with scale = alpha / rank
-    Idempotent: if already attached, reuses existing layers.
+    Replace the Linear at `proj_name` with LinearWithLoRA, preserving parameter/device.
+    Idempotent: if already wrapped, returns the existing wrapper.
     """
-    lin = _get_linear(module, proj_name)
-    if lin is None:
+    # fetch current linear
+    if proj_name == "to_out.0":
+        to_out = getattr(module, "to_out", None)
+        lin = to_out[0] if (to_out is not None and hasattr(to_out, "__getitem__")) else None
+    else:
+        lin = getattr(module, proj_name, None)
+
+    if lin is None or not isinstance(lin, torch.nn.Linear):
         return None
 
-    # reuse if present
-    lora_A = getattr(module, f"{proj_name}_lora_A", None)
-    lora_B = getattr(module, f"{proj_name}_lora_B", None)
-    if lora_A is None or lora_B is None:
-        in_f, out_f = lin.in_features, lin.out_features
-        lora_A = torch.nn.Linear(in_f, rank, bias=False)
-        lora_B = torch.nn.Linear(rank, out_f, bias=False)
-        torch.nn.init.kaiming_uniform_(lora_A.weight, a=math.sqrt(5))
-        torch.nn.init.zeros_(lora_B.weight)
-        setattr(module, f"{proj_name}_lora_A", lora_A)
-        setattr(module, f"{proj_name}_lora_B", lora_B)
+    # already wrapped?
+    if isinstance(lin, LinearWithLoRA):
+        return lin
 
-        scale_val = float(alpha) / float(rank)
+    # build wrapper and swap in place
+    wrapper = LinearWithLoRA(lin, rank=rank, alpha=alpha).to(lin.weight.device, dtype=lin.weight.dtype)
 
-        orig_forward = lin.forward
-        # Capture with unambiguous names to avoid collisions
-        def lora_forward(x, _orig_fwd=orig_forward, _A=lora_A, _B=lora_B, _scale=scale_val):
-            return _orig_fwd(x) + _B(_A(x)) * _scale
+    if proj_name == "to_out.0":
+        to_out[0] = wrapper
+    else:
+        setattr(module, proj_name, wrapper)
 
-        lin.forward = lora_forward  # monkey-patch
-
-    return lora_A, lora_B
+    return wrapper
 
 def _load_simple_lora_into_unet(unet, state: dict, alpha: float):
     """
     Load simple A/B LoRA weights from safetensors into UNet attention projections.
-    Expects keys like:
-      '{module_path}.to_q.lora_A.weight' and '{module_path}.to_q.lora_B.weight'
+    Expects keys:
+      '{module_path}.to_q.lora_A.weight' and '{module_path}.to_q.lora_B.weight'  (same for to_k, to_v, to_out.0)
     """
     loaded = 0
-    for name, module in unet.named_modules():
+    for name, block in unet.named_modules():
         for proj in ("to_q", "to_k", "to_v", "to_out.0"):
-            key_A = f"{name}.{proj}.lora_A.weight"
-            key_B = f"{name}.{proj}.lora_B.weight"
-            if key_A in state and key_B in state:
-                rank = int(state[key_A].shape[0])
-                pair = _attach_simple_lora_linear(module, proj, rank=rank, alpha=alpha)
-                if pair is None:
+            kA = f"{name}.{proj}.lora_A.weight"
+            kB = f"{name}.{proj}.lora_B.weight"
+            if kA in state and kB in state:
+                rank = int(state[kA].shape[0])
+                wrapper = _replace_with_lora_wrapper(block, proj, rank=rank, alpha=alpha)
+                if wrapper is None:
                     continue
-                lora_A, lora_B = pair
                 with torch.no_grad():
-                    lora_A.weight.copy_(state[key_A].to(lora_A.weight.device, dtype=lora_A.weight.dtype))
-                    lora_B.weight.copy_(state[key_B].to(lora_B.weight.device, dtype=lora_B.weight.dtype))
+                    wrapper.lora_A.weight.copy_(state[kA].to(wrapper.lora_A.weight.device, dtype=wrapper.lora_A.weight.dtype))
+                    wrapper.lora_B.weight.copy_(state[kB].to(wrapper.lora_B.weight.device, dtype=wrapper.lora_B.weight.dtype))
                 loaded += 1
     if loaded == 0:
         raise RuntimeError("No matching A/B LoRA keys were loaded into UNet.")
     return loaded
-
 
 @dataclass
 class SDConfig:
@@ -185,20 +197,19 @@ class StableDiffusionGenerator:
 
     def load_lora(self, lora_path: str, alpha: float = 1.0):
         """
-        Try native Diffusers LoRA loader; if it fails (old/simple A/B format),
-        fall back to custom UNet injection.
+        Try native Diffusers LoRA loader first; if it fails (old/simple A/B format),
+        fall back to our UNet wrapper injection.
         """
-        # 1) Native loader (diffusers format: lora.up/down.weight)
+        # Native loader (diffusers: lora.up/down.weight)
         try:
             self.pipe.load_lora_weights(lora_path)
             try:
-                # fuse with scale if available (older versions may not have it)
                 self.pipe.fuse_lora(lora_scale=float(alpha))
             except Exception:
                 pass
             return
         except Exception as e_native:
-            # 2) Fallback: our simple A/B safetensors format
+            # Fallback: simple A/B safetensors
             try:
                 state = load_safetensors(lora_path)
                 for k, v in state.items():
