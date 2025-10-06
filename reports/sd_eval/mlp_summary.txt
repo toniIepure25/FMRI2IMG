@@ -1,2 +1,2 @@
 n=8
-CLIPScore mean=0.3127, std=0.0655
+CLIPScore mean=0.3016, std=0.0649
