@@ -11,7 +11,8 @@ from safetensors.torch import load_file as load_safetensors
 class LinearWithLoRA(torch.nn.Module):
     """
     Wraps an existing nn.Linear as `base`, and adds LoRA A/B:
-        y = base(x) + B(A(x)) * scale
+        y = base(*args, **kwargs) + B(A(x)) * scale
+    where x is the first tensor positional argument (e.g., hidden_states).
     """
     def __init__(self, base: torch.nn.Linear, rank: int, alpha: float):
         super().__init__()
@@ -25,8 +26,21 @@ class LinearWithLoRA(torch.nn.Module):
         torch.nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
         torch.nn.init.zeros_(self.lora_B.weight)
 
-    def forward(self, x):
-        return self.base(x) + self.lora_B(self.lora_A(x)) * self.scale
+        # ensure same dtype/device as the wrapped layer
+        self.to(self.base.weight.device, dtype=self.base.weight.dtype)
+
+    def forward(self, *args, **kwargs):
+        # base output with the original call signature
+        base_out = self.base(*args, **kwargs)
+
+        # find the first tensor positional arg to feed LoRA (usually hidden_states)
+        if len(args) == 0 or not torch.is_tensor(args[0]):
+            # fallback: nothing to add
+            return base_out
+
+        x = args[0]
+        lora_out = self.lora_B(self.lora_A(x)) * self.scale
+        return base_out + lora_out
 
 def _get_linear(module, proj_name: str):
     """
