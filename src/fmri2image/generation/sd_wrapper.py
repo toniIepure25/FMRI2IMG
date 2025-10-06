@@ -6,61 +6,77 @@ import contextlib
 import torch
 
 # add near the top of the file
+# --- add/replace these helpers near the top of sd_wrapper.py ---
 import math
 from safetensors.torch import load_file as load_safetensors
 
+def _get_linear(module, proj_name: str):
+    """
+    Return the nn.Linear for a given projection name inside a Diffusers attention block.
+    proj_name in {'to_q','to_k','to_v','to_out.0'}.
+    """
+    if proj_name == "to_out.0":
+        to_out = getattr(module, "to_out", None)
+        if to_out is None or not hasattr(to_out, "__getitem__"):
+            return None
+        lin = to_out[0]
+    else:
+        lin = getattr(module, proj_name, None)
+    return lin if isinstance(lin, torch.nn.Linear) else None
+
 def _attach_simple_lora_linear(module, proj_name: str, rank: int, alpha: float):
     """
-    Attach simple LoRA A/B to a nn.Linear stored under `module.{proj_name}` and
-    monkey-patch forward: y = W x + scale * B(A x)
-    If already attached, it reuses existing layers (so we can just overwrite weights).
+    Attach simple LoRA A/B to the Linear at proj_name and monkey-patch its forward:
+      y = W x + scale * B(A(x)), with scale = alpha / rank
+    Idempotent: if already attached, reuses existing layers.
     """
-    lin = getattr(module, proj_name, None)
-    if not isinstance(lin, torch.nn.Linear):
-        return None  # not a Linear -> skip
+    lin = _get_linear(module, proj_name)
+    if lin is None:
+        return None
 
-    # if already attached, reuse
-    A = getattr(module, f"{proj_name}_lora_A", None)
-    B = getattr(module, f"{proj_name}_lora_B", None)
-    if A is None or B is None:
+    # reuse if present
+    lora_A = getattr(module, f"{proj_name}_lora_A", None)
+    lora_B = getattr(module, f"{proj_name}_lora_B", None)
+    if lora_A is None or lora_B is None:
         in_f, out_f = lin.in_features, lin.out_features
-        A = torch.nn.Linear(in_f, rank, bias=False)
-        B = torch.nn.Linear(rank, out_f, bias=False)
-        # init like in the trainer
-        torch.nn.init.kaiming_uniform_(A.weight, a=math.sqrt(5))
-        torch.nn.init.zeros_(B.weight)
-        setattr(module, f"{proj_name}_lora_A", A)
-        setattr(module, f"{proj_name}_lora_B", B)
+        lora_A = torch.nn.Linear(in_f, rank, bias=False)
+        lora_B = torch.nn.Linear(rank, out_f, bias=False)
+        torch.nn.init.kaiming_uniform_(lora_A.weight, a=math.sqrt(5))
+        torch.nn.init.zeros_(lora_B.weight)
+        setattr(module, f"{proj_name}_lora_A", lora_A)
+        setattr(module, f"{proj_name}_lora_B", lora_B)
 
-        scale = float(alpha) / float(rank)
+        scale_val = float(alpha) / float(rank)
 
-        orig_fwd = lin.forward
-        def fwd(x, orig_fwd=orig_fwd, A=A, B=B, scale=scale):
-            return orig_fwd(x) + B(A(x)) * scale
-        lin.forward = fwd
+        orig_forward = lin.forward
+        # Capture with unambiguous names to avoid collisions
+        def lora_forward(x, _orig_fwd=orig_forward, _A=lora_A, _B=lora_B, _scale=scale_val):
+            return _orig_fwd(x) + _B(_A(x)) * _scale
 
-    return A, B
+        lin.forward = lora_forward  # monkey-patch
+
+    return lora_A, lora_B
 
 def _load_simple_lora_into_unet(unet, state: dict, alpha: float):
     """
-    Load our simple A/B LoRA weights (keys like:
-    '<module_path>.to_q.lora_A.weight' / '...lora_B.weight') into UNet.
+    Load simple A/B LoRA weights from safetensors into UNet attention projections.
+    Expects keys like:
+      '{module_path}.to_q.lora_A.weight' and '{module_path}.to_q.lora_B.weight'
     """
     loaded = 0
     for name, module in unet.named_modules():
-        for proj in ["to_q", "to_k", "to_v", "to_out.0"]:
+        for proj in ("to_q", "to_k", "to_v", "to_out.0"):
             key_A = f"{name}.{proj}.lora_A.weight"
             key_B = f"{name}.{proj}.lora_B.weight"
             if key_A in state and key_B in state:
-                # infer rank from tensor shape
                 rank = int(state[key_A].shape[0])
                 pair = _attach_simple_lora_linear(module, proj, rank=rank, alpha=alpha)
                 if pair is None:
                     continue
-                A, B = pair
+                lora_A, lora_B = pair
                 with torch.no_grad():
-                    A.weight.copy_(state[key_A].to(A.weight.device, dtype=A.weight.dtype))
-                    B.weight.copy_(state[key_B].to(B.weight.device, dtype=B.weight.dtype))
+                    lora_A.weight.copy_(state[key_A].to(lora_A.weight.device, dtype=lora_A.weight.dtype))
+                    lora_B.weight.copy_(state[key_B].to(lora_B.weight.device, dtype=lora_B.weight.dtype))
                 loaded += 1
     if loaded == 0:
         raise RuntimeError("No matching A/B LoRA keys were loaded into UNet.")
@@ -169,23 +185,22 @@ class StableDiffusionGenerator:
 
     def load_lora(self, lora_path: str, alpha: float = 1.0):
         """
-        Try native Diffusers LoRA loader. If the file is in our simple A/B format,
-        fall back to custom injection.
+        Try native Diffusers LoRA loader; if it fails (old/simple A/B format),
+        fall back to custom UNet injection.
         """
-        # First try native (diffusers) format
+        # 1) Native loader (diffusers format: lora.up/down.weight)
         try:
             self.pipe.load_lora_weights(lora_path)
-            # set alpha via built-in API if available
             try:
+                # fuse with scale if available (older versions may not have it)
                 self.pipe.fuse_lora(lora_scale=float(alpha))
             except Exception:
                 pass
             return
         except Exception as e_native:
-            # Fallback: our simple A/B safetensors
+            # 2) Fallback: our simple A/B safetensors format
             try:
-                state = load_safetensors(lora_path)  # dict[str, Tensor]
-                # Put A/B tensors on the same device as UNet
+                state = load_safetensors(lora_path)
                 for k, v in state.items():
                     if isinstance(v, torch.Tensor):
                         state[k] = v.to(self.pipe.unet.device)
