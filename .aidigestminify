@@ -1,0 +1,36 @@
+# Big datasets & results (show path, skip contents)
+data/**
+outputs/**
+reports/**/*.pdf
+reports/**/*.html
+
+# Heavy artifacts
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.h5
+*.npz
+*.npy
+*.pkl
+*.joblib
+
+# Large texty files
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.arrow
+
+# Media
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.mp3
+*.wav
+*.mp4
+*.mov

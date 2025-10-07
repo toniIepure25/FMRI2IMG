@@ -1,0 +1,96 @@
+# --- core VCS / tooling noise ---
+.git/
+.gitmodules
+.vscode/
+.idea/
+.cache/
+.pytest_cache/
+__pycache__/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
+htmlcov/
+
+# --- virtual envs ---
+.venv/
+venv/
+
+# --- DVC cache & internals (keep dvc.yaml/lock at root) ---
+.dvc/**
+
+# --- data & outputs (keep tiny readmes/schemas if present) ---
+data/**
+!data/**/*.md
+!data/**/*.txt
+!data/**/*.yml
+!data/**/*.yaml
+
+outputs/**
+!outputs/**/*.md
+!outputs/**/*.txt
+!outputs/**/*.yml
+!outputs/**/*.yaml
+
+# --- experiment reports (ignore rendered artifacts; keep notes) ---
+reports/**
+!reports/**/*.md
+!reports/**/*.txt
+
+# --- notebooks & large artifacts ---
+*.ipynb
+
+# --- models / arrays / datasets (move to .aidigestminify if you prefer placeholders) ---
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.h5
+*.npz
+*.npy
+*.pkl
+*.joblib
+*.pb
+
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.arrow
+
+# --- binaries / media / archives ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.pdf
+*.mp3
+*.wav
+*.mp4
+*.mov
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# --- logs & temps ---
+*.log
+*.tmp
+*.bak
+*.swp
+
+# --- secrets & env ---
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.enc
+
+# --- common build outputs (if any) ---
+dist/
+build/
+.out/
